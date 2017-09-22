@@ -1,6 +1,14 @@
 module ORM
   require 'tadb'
 
+  class IntelligentDB
+
+    def self.table(clase)
+      return TADB::DB.table(clase)
+    end
+
+  end
+
   Object.const_set :Boolean, Class.new
 
   module Persistencia
@@ -18,22 +26,21 @@ module ORM
 
         attr_accessor campo
 
-        puts "Se persiste el atributo #{campo} de tipo #{tipo_dato}."
-      end
-
-      def save(instancia)
-        # instancia.validate! # "save!" implica "validate!"?
-        tabla = self.class_variable_get :@@tabla_persistencia
-        campos = self.class_variable_get :@@campos_persistibles
-        # aca haria un hash solo con los campos persistibles y sus valores
-        id = tabla.insert(Hash.new)
-        instancia.instance_variable_set :@id, id
+        # puts "atributo #{campo} de tipo #{tipo_dato}."
       end
 
     end
 
     def save!
-      self.class.save(self)
+      raise Error, "No valido!" unless self.validate!
+      tabla = self.class.class_variable_get :@@tabla_persistencia
+      campos = self.class.class_variable_get :@@campos_persistibles
+      registro = Hash[campos.map {|k, v| [k, self.send(k.to_sym)]}]
+      @_id = tabla.insert(registro)
+    end
+
+    def validate!
+      true #implementar!
     end
 
   end
@@ -42,9 +49,9 @@ module ORM
     def has_one(tipo_dato, metadatos)
       self.send :include, Persistencia
       self.class_variable_set(:@@campos_persistibles, Hash.new) unless self.class_variable_defined? :@@campos_persistible
-      self.class_variable_set(:@@tabla_persistencia, TADB::DB.table(self)) unless self.class_variable_defined? :@@tabla_persistencia
+      self.class_variable_set(:@@tabla_persistencia, IntelligentDB.table(self)) unless self.class_variable_defined? :@@tabla_persistencia
 
-      puts "clase #{self} inicializada para persistencia"
+      # puts "clase #{self} inicializada para persistencia"
 
       self.has_one(tipo_dato, metadatos)
     end

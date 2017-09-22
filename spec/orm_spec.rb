@@ -38,14 +38,17 @@ describe 'Al usar persistencia' do
 
     it "deberia dejarme guardar" do
       p = Person.new
+      p.first_name = "demian"
       p.last_name = "morales"
+      p.age = 29
+      p.admin = false
       p.save!
     end
   end
 
-  after :all do
+  after :each do
     #borramos la base de datos
-    FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
+    #FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
   end
 
 end

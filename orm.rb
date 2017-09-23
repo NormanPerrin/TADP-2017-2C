@@ -15,6 +15,7 @@ module ORM
     end
 
     def search_by_id(id)
+      # mergear con clase nueva y esa
       @table.entries.select { |h| h[:id] == id }
     end
 
@@ -41,8 +42,12 @@ module ORM
       end
 
       def search_by_id(id)
-        tabla = self.class_variable_get :@@tabla_persistencia
-        tabla.search_by_id id
+        self.merge(self.new, id)
+      end
+
+      def merge(objeto, id)
+        hash = @tabla.search_by_id id
+        hash.each { |k,v| objeto.send (k+"=").to_sym, v }
       end
 
     end
@@ -64,8 +69,7 @@ module ORM
     end
 
     def refresh!
-      # TODO: implementar
-      p 'hola'
+      self.class.merge(self, self.id)
     end
 
   end

@@ -45,24 +45,31 @@ describe 'Al usar persistencia' do
       p.save!
     end
 
-    it "deberia tener id al guardar" do
+    it "deberia buscar por id inexistente y retornar nil" do
+       expect { Person.search_by_id 123 }.to eq nil
+    end
+
+    it "deberia buscar por id existente y retornar objeto" do
+       p = Person.new
+       p.first_name = "juan"
+       p.last_name = "pistola"
+       p.age = 1
+       p.admin = false
+       p.save!
+       expect ((Person.search_by_id p.id).id).to eq p.id
+    end
+
+    it 'deberia actualizar los campos del objeto' do
       p = Person.new
-      p.first_name = "first"
-      p.last_name = "last"
+      p.first_name = "juan"
+      p.last_name = "pistola"
       p.age = 1
       p.admin = false
       p.save!
-      expect(p).to have_attributes(:id => a_value)
-    end
 
-    it 'responder search_by_id' do
-      p = Person.new
-      p.first_name = "raul"
-      p.last_name = "perez"
-      p.age = 3
-      p.admin = false
-      p.save!
-      Person.search_by_id 123
+      p.first_name = "pedro"
+      p.refresh!
+      expect (p.first_name).to eq "juan"
     end
   end
 

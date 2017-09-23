@@ -44,6 +44,26 @@ describe 'Al usar persistencia' do
       p.admin = false
       p.save!
     end
+
+    it "deberia tener id al guardar" do
+      p = Person.new
+      p.first_name = "first"
+      p.last_name = "last"
+      p.age = 1
+      p.admin = false
+      p.save!
+      expect(p).to have_attributes(:id => a_value)
+    end
+
+    it 'responder search_by_id' do
+      p = Person.new
+      p.first_name = "raul"
+      p.last_name = "perez"
+      p.age = 3
+      p.admin = false
+      p.save!
+      Person.search_by_id 123
+    end
   end
 
   after :each do

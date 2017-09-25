@@ -4,7 +4,6 @@ module Persistencia
     attr_accessor :klass, :superklass
 
     def <(superklass)
-      p "paso por def <"
       self.superklass= superklass
       return self
     end
@@ -17,20 +16,11 @@ module Persistencia
       ##### Define al @klass dependiendo si tiene superclase, y crea la constante en Object
       ##### Si es un builder solamente pasara una vez en la declaracion de la clase persistible luego para
       ##### Open Class lo hara como constante
-      p "obtener clase persistible"
-      p builder
-      p builder.class
-      p self
-      p @superKlass.nil?
       if !(@superklass.nil?)
-        p "paso por super"
         @clase = Class.new(@superklass)
       else
-        p "paso por sola"
         @clase = Class.new
       end
-      p builder.klass
-      p @clase
       Object.const_set @klass, @clase
     end
 
@@ -40,12 +30,13 @@ module Persistencia
     end
 
     def construir_evaluando_bloque(bloque)
+      p "construir_evaluando_bloque"
+      p @clase.instance_methods
       @clase.class_eval &bloque
+      #@clase.instance_eval &bloque
     end
 
     def construir_clase_persistible(&bloque)
-      p "construir clase persistible"
-      p self
       obtener_clase_persistible(self)
       construir_metodos
       construir_evaluando_bloque(bloque)
@@ -53,14 +44,25 @@ module Persistencia
   end
 
   module MetodosDeClase
-    def metodoDeClase
-      p "soy metodo de clase"
+    def crear_atributo_en_autoclase(tipo, nombre_simbolo)
+      self.class_variable_set(:@@atributosPersistibles, {}) unless self.class_variable_defined?(:@@atributosPersistibles)
+      raise NameError, "El atributo #{nombre_simbolo.to_s} ya existe" if
+          (self.class_variable_get(:@@atributosPersistibles)).has_key? nombre_simbolo
+      (self.class_variable_get(:@@atributosPersistibles))[nombre_simbolo]=tipo
+      p "atributosPersistibles"
+p self.class_variable_get(:@@atributosPersistibles)
     end
-  end
-  module MetodosDeInstancia
-    def has_one(tipo_dato, metadatos)
-      puts "Se persiste el atributo #{metadatos} de tipo #{tipo_dato}."
-      attr_accessor metadatos
+    def crear_setter(tipo, nombre)
+      define_method(nombre.to_s+"=") do |valor|
+        raise TypeError, "El valor no es #{tipo.to_s}" unless valor.is_a?tipo
+        self.instance_variable_set("@#{nombre}",valor)
+      end
+    end
+    def has_one(tipo_dato, descripcion = {})
+      puts "Se persiste el atributo #{descripcion} de tipo #{tipo_dato}."
+      crear_atributo_en_autoclase(tipo_dato, descripcion[:named])
+      attr_reader descripcion[:named]
+      crear_setter(tipo_dato, descripcion[:named])
     end
     def has_many
       p "soy has_many"
@@ -79,20 +81,23 @@ module Persistencia
       p "clase_persistente openClass"
       entorno_persitencia.class_eval &bloque
     end
+
   end
-
-
-
-  class B
-    def metodoB
-      p "metodo b"
+  module MetodosDeInstancia
+    def metodoDeInstancia
+      p "soy metodo de clase"
     end
   end
-  clase_persistente A < B do
 
-  end
 
-  p A.instance_variables
-  p A.singleton_methods
-  p A.instance_methods()
+    # class A
+    #   p "Antes has_one"
+    #   has_one String, named: :nombre
+    #   p "Luego has_one"
+    # end
+
+
+
 end
+
+

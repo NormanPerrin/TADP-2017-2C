@@ -77,6 +77,17 @@ describe 'Al usar ORM' do
                        )
     end
 
+    it "deberia buscar por atributo existente y retornar lista de objetos" do
+      p = Person.new
+      p.save!
+
+      found = Person.find_by_first_name p.first_name
+
+      expect(found).to be_a(Array)
+      expect(found.length).to be > 1
+      expect(found[0]).to be_a(Person)
+    end
+
     it 'deberia actualizar los campos del objeto' do
       p = Person.new
       p.save!

@@ -14,8 +14,12 @@ module ORM
       #3. si esta hacer delete e insert TODO: verificar si actualizar id o q onda...
     end
 
+    def all_instances
+      @table.entries
+    end
+
     def search_by(field, value)
-      @table.entries.select {|h| h[field] == value}
+      self.all_instances.select {|h| h[field] == value}
     end
 
   end
@@ -53,23 +57,30 @@ module ORM
       end
 
       def find_by_id(id)
-        encontrados = self.tabla_persistencia.search_by(:id, id)
-        return nil if encontrados.length != 1
-        self.merge(self.new, encontrados[0])
+        # Caso especial de find_by_<what>
+        self.merge_id(self.new, id)
       end
 
       def method_missing(sym, *args, &block)
+        # Caso generico de find_by_<what>
         super(sym, *args, &block) unless sym.to_s.start_with? "find_by_"
-        field = "#{sym.to_s[-("find_by_".length)]}".to_sym
+
+        field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
         value = args[0]
 
         encontrados = self.tabla_persistencia.search_by(field, value)
-        encontrados.map {|hash| merge(self.new, hash)}
+        encontrados.map {|hash| merge_hash(self.new, hash)}
       end
 
-      def merge(objeto, hash)
+      def merge_id(objeto, id)
+        encontrados = self.tabla_persistencia.search_by(:id, id)
+        return merge_hash(objeto,encontrados[0]) unless encontrados.length != 1
+        return nil
+      end
+
+      def merge_hash(objeto, hash)
         hash.each {|k, v| objeto.send "#{k}=".to_sym, v}
-        objeto
+        return objeto
       end
 
     end
@@ -89,7 +100,7 @@ module ORM
     end
 
     def refresh!
-      self.class.merge(self, self.id)
+      self.class.merge_id(self, self.id) if self.respond_to? :id
     end
 
   end

@@ -14,16 +14,15 @@ module ORM
       #3. si esta hacer delete e insert TODO: verificar si actualizar id o q onda...
     end
 
-    def search_by_id(id)
-      # mergear con clase nueva y esa
-      @table.entries.select { |h| h[:id] == id }
+    def search_by(field, value)
+      @table.entries.select {|h| h[field] == value}
     end
 
   end
 
   Object.const_set :Boolean, Class.new
 
-  module Persistencia
+  module Persistente
 
     def self.included clase
       clase.extend MetodosClase
@@ -31,37 +30,58 @@ module ORM
 
     module MetodosClase
 
+      def inherited subclass
+        subclass.send :include, Persistente
+        subclass.campos_persistibles = self.campos_persistibles
+      end
+
+      def campos_persistibles
+        @campos_persistibles ||= Hash.new
+      end
+
+      def tabla_persistencia
+        @tabla_persistencia ||= IntelligentDB.new TADB::DB.table(self)
+      end
+
+      attr_writer :campos_persistibles, :tabla_persistencia
+
       def has_one(tipo_dato, metadatos)
         campo = metadatos[:named]
-        campos = self.class_variable_get :@@campos_persistibles
-        campos[campo] = tipo_dato
-
+        self.campos_persistibles[campo] = tipo_dato
         attr_accessor campo
-
         # puts "atributo #{campo} de tipo #{tipo_dato}."
       end
 
-      def search_by_id(id)
-        self.merge(self.new, id)
+      def find_by_id(id)
+        encontrados = self.tabla_persistencia.search_by(:id, id)
+        return nil if encontrados.length != 1
+        self.merge(self.new, encontrados[0])
       end
 
-      def merge(objeto, id)
-        hash = @tabla.search_by_id id
-        hash.each { |k,v| objeto.send (k+"=").to_sym, v }
+      def method_missing(sym, *args, &block)
+        super(sym, *args, &block) unless sym.to_s.start_with? "find_by_"
+        field = "#{sym.to_s[-("find_by_".length)]}".to_sym
+        value = args[0]
+
+        encontrados = self.tabla_persistencia.search_by(field, value)
+        encontrados.map {|hash| merge(self.new, hash)}
+      end
+
+      def merge(objeto, hash)
+        hash.each {|k, v| objeto.send "#{k}=".to_sym, v}
+        objeto
       end
 
     end
 
-    def id
-      @id
-    end
+    attr_accessor :id
 
     def save!
-      raise Error, "No valido!" unless self.validate!
-      tabla = self.class.class_variable_get :@@tabla_persistencia
-      campos = self.class.class_variable_get :@@campos_persistibles
+      self.validate!
+      tabla = self.class.tabla_persistencia
+      campos = self.class.campos_persistibles
       registro = Hash[campos.map {|k, v| [k, self.send(k.to_sym)]}]
-      @id = tabla.insertOrUpdate(registro)
+      self.id= tabla.insertOrUpdate(registro)
     end
 
     def validate!
@@ -74,14 +94,10 @@ module ORM
 
   end
 
-  refine Class do
+  refine Module do
     def has_one(tipo_dato, metadatos)
-      self.send :include, Persistencia
-      self.class_variable_set(:@@campos_persistibles, Hash.new) #unless
-      table = IntelligentDB.new TADB::DB.table(self)
-      self.class_variable_set(:@@tabla_persistencia, table) #unless
+      self.send :include, Persistente
       # puts "clase #{self} inicializada para persistencia"
-
       self.has_one(tipo_dato, metadatos)
     end
 

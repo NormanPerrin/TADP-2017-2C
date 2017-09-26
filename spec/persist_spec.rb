@@ -8,9 +8,9 @@ describe 'Al usar ORM' do
   context "sin haber creado clases" do
 
     it "deberia poder crear una clase persistente" do
-        class Animal
-          has_one String, named: :last_name
-        end
+      class Animal
+        has_one String, named: :last_name
+      end
 
       expect(Animal.new).not_to be_nil
     end
@@ -77,17 +77,6 @@ describe 'Al usar ORM' do
                        )
     end
 
-    it "deberia buscar por atributo existente y retornar lista de objetos" do
-      p = Person.new
-      p.save!
-
-      found = Person.find_by_first_name p.first_name
-
-      expect(found).to be_a(Array)
-      expect(found.length).to be > 1
-      expect(found[0]).to be_a(Person)
-    end
-
     it 'deberia actualizar los campos del objeto' do
       p = Person.new
       p.save!
@@ -98,11 +87,37 @@ describe 'Al usar ORM' do
       expect(p.first_name).to eq "juan"
     end
 
+    context "y varias instancias persistidas" do
+
+      before :each do
+        (Person.new "pedro", "escamoso", 100, true).save!
+        (Person.new "pedro", "escamoso", 100, true).save!
+        (Person.new "juan", "pistolas", 100, true).save!
+      end
+
+      it "deberia poder obtener todas las instancias" do
+        all = Person.all_instances
+
+        expect(all).to be_a(Array)
+        expect(all.length).to eq(3)
+        expect(all[0]).to be_a(Person)
+      end
+
+      it "deberia buscar por atributo existente y retornar lista de objetos" do
+        found = Person.find_by_first_name "pedro"
+
+        expect(found).to be_a(Array)
+        expect(found.length).to eq(2)
+        expect(found[0]).to be_a(Person)
+      end
+
+    end
+
   end
 
   after :each do
     #borramos la base de datos
-    #FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
+    FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
   end
 
 end

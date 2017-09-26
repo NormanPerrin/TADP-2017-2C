@@ -14,12 +14,12 @@ module ORM
       #3. si esta hacer delete e insert TODO: verificar si actualizar id o q onda...
     end
 
-    def all_instances
+    def entries
       @table.entries
     end
 
     def search_by(field, value)
-      self.all_instances.select {|h| h[field] == value}
+      self.entries.select {|h| h[field] == value}
     end
 
   end
@@ -56,9 +56,15 @@ module ORM
         # puts "atributo #{campo} de tipo #{tipo_dato}."
       end
 
+      def all_instances
+        hashes_to_instances(tabla_persistencia.entries)
+      end
+
       def find_by_id(id)
         # Caso especial de find_by_<what>
-        self.merge_id(self.new, id)
+        dummy=self.new
+        dummy.id = id
+        self.refresh(dummy)
       end
 
       def method_missing(sym, *args, &block)
@@ -68,19 +74,25 @@ module ORM
         field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
         value = args[0]
 
-        encontrados = self.tabla_persistencia.search_by(field, value)
-        encontrados.map {|hash| merge_hash(self.new, hash)}
+        hashes_to_instances(self.tabla_persistencia.search_by(field, value))
       end
 
-      def merge_id(objeto, id)
-        encontrados = self.tabla_persistencia.search_by(:id, id)
-        return merge_hash(objeto,encontrados[0]) unless encontrados.length != 1
+      def refresh(objeto)
+        encontrados = self.tabla_persistencia.search_by(:id, objeto.id)
+        return merge_hash_into_object(encontrados[0], objeto) unless encontrados.length != 1
         return nil
       end
 
-      def merge_hash(objeto, hash)
+      private
+      def hashes_to_instances(hashes)
+        hashes.map do |hash|
+          merge_hash_into_object(hash, self.new)
+        end
+      end
+
+      def merge_hash_into_object(hash, objeto)
         hash.each {|k, v| objeto.send "#{k}=".to_sym, v}
-        return objeto
+        objeto
       end
 
     end
@@ -100,7 +112,7 @@ module ORM
     end
 
     def refresh!
-      self.class.merge_id(self, self.id) if self.respond_to? :id
+      self.class.refresh(self) if self.respond_to? :id
     end
 
   end

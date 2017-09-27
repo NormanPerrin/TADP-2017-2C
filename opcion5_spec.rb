@@ -5,6 +5,24 @@ using Persistencia
 context "con una clase que no existe" do
   it 'deberia dejarme crear las clases' do
     module Persistencia
+      clase_persistente Grade do
+        has_one Numeric, named: :value
+      end
+      clase_persistente Student do
+        has_one String, named: :full_name
+        has_one Grade, named: :grade
+      end
+      s = Student.new
+      s.full_name="G"
+      s.grade=Grade.new
+      s.grade.value=8
+      s.save!
+      g=s.grade
+      g.value=5
+      g.save!
+      s.refresh!
+      p= Student.all_instances.first
+      p p.grade.value
       clase_persistente A do
         attr_accessor :uno, :dos
         has_one String, named: :nombre
@@ -32,7 +50,6 @@ context "con una clase que no existe" do
       p A.ancestors
       p A.instance_variables
       p A.class_variable_get(:@@atributosPersistibles)
-      p a.nombre
       a.nombre="3"
       p a.nombre
       p a.numero
@@ -49,20 +66,62 @@ context "con una clase que no existe" do
       p i.last.numero
       i = A.find_by_numero(9)
       p i
-      p i.last.numero
+      p i.last.numero if !i.last.nil?
       i = A.find_by_nombre("rrr")
       p i
       p i.last.nombre if !i.last.nil?
       i = A.find_by_metodoClaseA(true)
       p i
       p i.last.nombre if !i.last.nil?
-      i = A.find_by_metodoClaseAConArgs(true)
-      p i
-      p i.last.nombre if !i.last.nil?
+      # i = A.find_by_metodoClaseAConArgs(true)
+      # p i
+      # p i.last.nombre if !i.last.nil?
       a.forget!
       p a.id
       p "Fin"
 
+      clase_persistente D do
+        has_one String, named: :nombre
+        has_one Numeric, named: :numero
+        attr_accessor :atributoClaseB
+        has_one A, named: :claseA
+        def metodoClaseB
+          p "metodoClaseB"
+        end
+      end
+      d= D.new
+      d.claseA=a
+      otra_d= D.new
+      otra_d.nombre="rrr"
+      otra_d.numero=35
+      otra_d.save!
+      p "Comienzo"
+      p d.methods
+      p D.class_variable_get(:@@atributosPersistibles)
+      p d.nombre
+      d.nombre="3"
+      p d.nombre
+      p d.numero
+      d.numero=3
+      p d.numero
+      d.save!
+      p d.id
+      d.numero=12
+      d.refresh!
+      p d.numero
+      p d.id
+      i = D.all_instances
+      p i
+      p i.last.numero
+      i = D.find_by_numero(9)
+      p i
+      p i.last.numero if !i.last.nil?
+      i = D.find_by_nombre("rrr")
+      p i
+      d.forget!
+      p d.id
+      p d.claseA.id
+      p "Fin"
       class B
         attr_accessor :atributoClaseB
         def metodoClaseB
@@ -79,7 +138,7 @@ context "con una clase que no existe" do
           p "metodoClaseC"
         end
       end
-      c=C.new
+      c= C.new
       p "Comienzo"
       p c.methods
       p C.instance_methods(false)
@@ -97,6 +156,8 @@ context "con una clase que no existe" do
       c.metodoClaseB
 
       p "Fin"
+
+
     end
   end
 end

@@ -48,8 +48,13 @@ module Persistencia
     end
     def crear_setter(tipo, nombre)
       define_method(nombre.to_s+"=") do |valor|
-        raise TypeError, "El valor no es #{tipo.to_s}" unless valor.is_a?tipo
-        self.instance_variable_set("@#{nombre}",valor)
+        # if tipo.instance_methods.include?(:save!) && tipo.instance_methods.include?(:refresh!)
+        valorValido = ( [:save!, :refresh!] - tipo.instance_methods ).empty? && !valor.is_a?(tipo) ?
+            tipo.buscar_instancia(valor) : valor
+        #   instancia = tipo.buscar_instancias_coincidentes(:id,valor)
+        # end
+        raise TypeError, "El atributo #{nombre} con valor #{valorValido} no es del tipo #{tipo.to_s}" unless valorValido.is_a?tipo
+        self.instance_variable_set("@#{nombre}",valorValido)
       end
     end
     def has_one(tipo_dato, descripcion = {})
@@ -59,7 +64,8 @@ module Persistencia
     end
     def armarObjeto(datosInstancia)
       obj = self.new
-      datosInstancia.each { |atributo,valor| obj.__send__("#{atributo}=", valor) }
+      obj.accessors_para_id
+      datosInstancia.each { |atributo,valor| obj.__send__("#{atributo}=", valor) unless valor.nil?}
       obj
     end
     def all_instances
@@ -67,7 +73,10 @@ module Persistencia
       instancias = ObjectSpace.each_object(self)
       TADB::DB.table(self.name.to_s).entries().each  {
           |entrada|
-        instanciasCoincidentes = instancias.select { |instancia| instancia.id == entrada[:id] }
+        instanciasCoincidentes = instancias.select {
+            |instancia|
+          (instancia.methods.include?(:id) && instancia.id == entrada[:id])
+        }
         if (instanciasCoincidentes.length == 1)
           instanciaParaAgregar = instanciasCoincidentes.first
         else
@@ -76,6 +85,12 @@ module Persistencia
         vectorInstancias << instanciaParaAgregar
       }
       vectorInstancias
+    end
+    def buscar_instancia(id)
+      (self.all_instances.select do
+      |instancia|
+        id===instancia.__send__(:id)
+      end).first
     end
     def buscar_instancias_coincidentes(metodo, args)
       self.all_instances.select do
@@ -119,7 +134,15 @@ module Persistencia
       hash ||= {}
       self.class.class_variable_get("@@atributosPersistibles").each do
       |nombreAtributo, tipo|
-        hash[nombreAtributo]=self.send(nombreAtributo)
+        valor = self.send(nombreAtributo)
+        if !valor.nil?
+          if valor.respond_to?("save!") && valor.respond_to?("refresh!")
+            id=valor.save!
+            hash[nombreAtributo]=id
+          else
+            hash[nombreAtributo]=valor
+          end
+        end
       end
       hash
     end
@@ -127,7 +150,8 @@ module Persistencia
     def save!
       if @id.nil?
         hash = crear_hash_atributos
-        self.class.__send__(:attr_accessor, "id")
+        # self.class.__send__(:attr_accessor, "id")
+        accessors_para_id
         self.__send__("id=", TADB::DB.table(self.class.name.to_s).insert(hash))
       else
         refresh!
@@ -135,8 +159,18 @@ module Persistencia
       @id
     end
 
+    def accessors_para_id
+      self.define_singleton_method(:id) { @id }
+      self.define_singleton_method(:id=) { |valor| @id=valor }
+    end
+
     def borrar_registro_si_existe
       raise TypeError, "​El​ ​objeto​ #{self} no​ ​tiene​ ​id!" unless !@id.nil?
+      self.class.class_variable_get("@@atributosPersistibles").each do
+      |nombreAtributo, tipo|
+        valor = self.send(nombreAtributo)
+        valor.forget! if valor.respond_to?("save!") && valor.respond_to?("refresh!")
+      end
       TADB::DB.table(self.class.name.to_s).delete(@id)
     end
 

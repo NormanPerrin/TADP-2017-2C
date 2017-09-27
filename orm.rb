@@ -22,6 +22,10 @@ module ORM
       self.entries.select {|h| h[field] == value}
     end
 
+    def delete(id)
+      @table.delete(id)
+    end
+
   end
 
   Object.const_set :Boolean, Class.new
@@ -113,6 +117,11 @@ module ORM
 
     def refresh!
       self.class.refresh(self) if self.respond_to? :id
+    end
+
+    def forget!
+      self.class.tabla_persistencia.delete(self.id)
+      self.id = nil
     end
 
   end

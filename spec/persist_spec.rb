@@ -87,6 +87,15 @@ describe 'Al usar ORM' do
       expect(p.first_name).to eq "juan"
     end
 
+    it 'deberia dejarme eliminar' do
+      p = Person.new
+      p.save!
+      expect(p.id).not_to eq nil
+
+      p.forget!
+      expect(p.id).to eq nil
+    end
+
     context "y varias instancias persistidas" do
 
       before :each do

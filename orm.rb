@@ -3,23 +3,40 @@ module ORM
 
   class IntelligentDB
 
-    def initialize(_table)
-      @table = _table
+    def initialize(clase)
+      @table = TADB::DB.table(clase)
     end
 
-    def insertOrUpdate(registro)
-      #1. hacer search by campos de registro
-      #2. si no esta hacer insert
-      @table.insert(registro)
-      #3. si esta hacer delete e insert TODO: verificar si actualizar id o q onda...
+    def insertOrUpdate(hash)
+      if self.search_by_id(hash[:id]).nil?
+        return insert(hash)
+      else
+        return update(hash)
+      end
+    end
+
+    def insert(hash)
+      @table.insert(hash)
+    end
+
+    def update(hash)
+      #TODO: que hacemos con un update?
+      @table.insert(hash)
     end
 
     def entries
       @table.entries
     end
 
+    def search_by_id(id)
+      posible = self.search_by(:id, id)
+      return nil if posible.length == 0
+      return posible[0] if posible.length == 1
+      raise IOError "La base informa #{posible.length} registros con ese id."
+    end
+
     def search_by(field, value)
-      self.entries.select {|h| h[field] == value}
+      @table.entries.select {|hash| hash[field]==value}
     end
 
     def delete(id)
@@ -43,15 +60,15 @@ module ORM
         subclass.campos_persistibles = self.campos_persistibles
       end
 
+      attr_writer :campos_persistibles, :tabla_persistencia
+
       def campos_persistibles
         @campos_persistibles ||= Hash.new
       end
 
       def tabla_persistencia
-        @tabla_persistencia ||= IntelligentDB.new TADB::DB.table(self)
+        @tabla_persistencia ||= IntelligentDB.new self
       end
-
-      attr_writer :campos_persistibles, :tabla_persistencia
 
       def has_one(tipo_dato, metadatos)
         campo = metadatos[:named]
@@ -61,14 +78,10 @@ module ORM
       end
 
       def all_instances
-        hashes_to_instances(tabla_persistencia.entries)
-      end
-
-      def find_by_id(id)
-        # Caso especial de find_by_<what>
-        dummy=self.new
-        dummy.id = id
-        self.refresh(dummy)
+        entries = tabla_persistencia.entries
+        #  aca buscaria los entries de las sublcases;
+        #  entries.addAll(subclases.entries)  <= recursivo, no?
+        entries.map{|hash| hash_to_instance(hash, self.new)}
       end
 
       def method_missing(sym, *args, &block)
@@ -78,25 +91,46 @@ module ORM
         field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
         value = args[0]
 
-        hashes_to_instances(self.tabla_persistencia.search_by(field, value))
+        encontrados = tabla_persistencia.search_by(field, value)
+        encontrados.map{|hash| hash_to_instance(hash, self.new)}
+      end
+
+      def find_by_id(id)
+        # Caso especial de find_by_<what>
+        dummy=self.new
+        dummy.id = id
+        self.refresh(dummy)
+      end
+
+      def persist(objeto)
+        hash = instance_to_hash(objeto)
+        id_generado = self.tabla_persistencia.insertOrUpdate(hash)
+        objeto.id = id_generado
+      end
+
+      def remove(objeto)
+        self.tabla_persistencia.delete(objeto.id)
+        objeto.id = nil
       end
 
       def refresh(objeto)
-        encontrados = self.tabla_persistencia.search_by(:id, objeto.id)
-        return merge_hash_into_object(encontrados[0], objeto) unless encontrados.length != 1
-        return nil
+        raise RuntimeError "No se puede refresh! sin antes hacer save!" if objeto.id.nil?
+        hash = self.tabla_persistencia.search_by_id(objeto.id)
+        return hash_to_instance(hash,objeto) unless hash.nil?
+        #TODO: Diseño: definir que hacer cuando el id no existe en la base: nil? excepcion?
+        nil
       end
 
       private
-      def hashes_to_instances(hashes)
-        hashes.map do |hash|
-          merge_hash_into_object(hash, self.new)
-        end
+      def instance_to_hash(instance)
+        #TODO: logica sobre campos compuestos!
+        Hash[self.campos_persistibles.map {|k, v| [k, instance.send(k.to_sym)]}]
       end
 
-      def merge_hash_into_object(hash, objeto)
-        hash.each {|k, v| objeto.send "#{k}=".to_sym, v}
-        objeto
+      def hash_to_instance(hash,instance)
+        #TODO: logica sobre campos compuestos!
+        hash.each {|k, v| instance.send "#{k}=".to_sym, v}
+        instance
       end
 
     end
@@ -105,10 +139,7 @@ module ORM
 
     def save!
       self.validate!
-      tabla = self.class.tabla_persistencia
-      campos = self.class.campos_persistibles
-      registro = Hash[campos.map {|k, v| [k, self.send(k.to_sym)]}]
-      self.id= tabla.insertOrUpdate(registro)
+      self.class.persist(self)
     end
 
     def validate!
@@ -116,12 +147,11 @@ module ORM
     end
 
     def refresh!
-      self.class.refresh(self) if self.respond_to? :id
+      self.class.refresh(self)
     end
 
     def forget!
-      self.class.tabla_persistencia.delete(self.id)
-      self.id = nil
+      self.class.remove(self)
     end
 
   end

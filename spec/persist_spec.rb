@@ -42,7 +42,6 @@ describe 'Al usar ORM' do
       end
     end
 
-
     it 'deberia tener los accesors' do
       p = Person.new
       expect(p).to respond_to(:last_name)
@@ -85,6 +84,10 @@ describe 'Al usar ORM' do
       p.refresh!
 
       expect(p.first_name).to eq "juan"
+    end
+
+    it "deberia fallar si intento refrescar una instancia aun no persistida" do
+      expect{Person.new.refresh!}.to raise_error(StandardError)
     end
 
     it 'deberia dejarme eliminar' do

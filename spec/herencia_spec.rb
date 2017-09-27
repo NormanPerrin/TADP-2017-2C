@@ -24,7 +24,7 @@ describe 'Al usar ORM' do
 
   after :each do
     #borramos la base de datos
-    #FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
+    FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")
   end
 
 end

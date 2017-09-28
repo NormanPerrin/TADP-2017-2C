@@ -88,6 +88,10 @@ module Persistente
       instance
     end
 
+    def is_primitivo(instancia)
+      return (instancia.is_a?String) || (instancia.is_a?Numeric) || (Boolean.checks?instancia)
+    end
+
   end
 
   attr_accessor :id

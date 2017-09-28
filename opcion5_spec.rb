@@ -1,5 +1,5 @@
 require 'rspec'
-require_relative 'opcion5'
+require_relative 'opcion5Refactorizado'
 
 using Persistencia
 context "con una clase que no existe" do
@@ -7,22 +7,72 @@ context "con una clase que no existe" do
     module Persistencia
       clase_persistente Grade do
         has_one Numeric, named: :value
+        has_one String, named: :nombre
       end
+      g=Grade.new
+      g.value=5
+      g.nombre="5"
+      p g.nombre
+      p g.value
+      g.save!
+      g.nombre="jhaskhf"
+      g.refresh!
+      p g.nombre
+      p g.value
+      p= Grade.all_instances
+      p p
+      p p.first.value
       clase_persistente Student do
         has_one String, named: :full_name
         has_one Grade, named: :grade
+        has_many Grade, named: :lista
       end
       s = Student.new
       s.full_name="G"
       s.grade=Grade.new
       s.grade.value=8
+      p s.full_name
+      p s.grade.value
+      # s.save!
+      g=Grade.new
+      g.value=5333
+      s.lista.push(g)
+      g2=Grade.new
+      g2.value=542526346
+      s.lista.push(g2)
+      s.lista.first.value
+      g.save!
+      p s.lista.first.value
+      g.value=53333451
+      s.save!
+      p s.lista.first.value
+      g.value=53333451848484
+      s.refresh!
+      p s.lista.first.value
+      p= Student.all_instances
+      p p
+      clase_persistente StudentVector do
+        has_one String, named: :full_name
+        has_many Grade, named: :grade
+      end
+      s = StudentVector.new
+      s.full_name="G"
+      s.grade.push(Grade.new)
+      s.grade[0].value=8
       s.save!
       g=s.grade
-      g.value=5
-      g.save!
+      g[0].value=5
+      g[0].save!
+      nota = Grade.new
+      nota.value=7
+      s.grade.push(nota)
+      s.save!
       s.refresh!
-      p= Student.all_instances.first
-      p p.grade.value
+      p= StudentVector.all_instances.first
+      p p.grade[0].value
+      p p
+      p p.grade.to_s
+      p "FIN HAS_MANY"
       clase_persistente A do
         attr_accessor :uno, :dos
         has_one String, named: :nombre
@@ -49,7 +99,7 @@ context "con una clase que no existe" do
       p A.methods
       p A.ancestors
       p A.instance_variables
-      p A.class_variable_get(:@@atributosPersistibles)
+      p A.get_atributos_persistentes
       a.nombre="3"
       p a.nombre
       p a.numero
@@ -65,6 +115,9 @@ context "con una clase que no existe" do
       p i
       p i.last.numero
       i = A.find_by_numero(9)
+      p i
+      p i.last.numero if !i.last.nil?
+      i = A.find_by_numero(12)
       p i
       p i.last.numero if !i.last.nil?
       i = A.find_by_nombre("rrr")
@@ -97,7 +150,7 @@ context "con una clase que no existe" do
       otra_d.save!
       p "Comienzo"
       p d.methods
-      p D.class_variable_get(:@@atributosPersistibles)
+      p D.get_atributos_persistentes
       p d.nombre
       d.nombre="3"
       p d.nombre
@@ -157,7 +210,45 @@ context "con una clase que no existe" do
 
       p "Fin"
 
+      # module_persistente Personak do
+      #   has_one String, named: :nombre
+      # end
 
+      clase_persistente  Estudiante do
+        # include Personak
+        has_one String, named: :nombre
+        has_one Numeric, named: :nota
+      end
+
+      clase_persistente  Asistente < Estudiante do
+        has_one String, named: :veremos
+        has_one String, named: :nota
+      end
+
+      p=Estudiante.new
+      p.nombre="yuo"
+      p.nota=9
+      p p.nota=9
+      p.save!
+      p2=Asistente.new
+      p2.nombre="yuo33"
+      p2.nota="10"
+      p2.veremos="10"
+      p p2.nota
+      p p2.veremos
+      p p2.nombre
+      p2.save!
+      p p2.nota
+      p p2.veremos
+      p p2.nombre
+      p Estudiante.all_instances
+      p Asistente.all_instances
+      i = Estudiante.find_by_nota(9)
+      p i
+      p i.last.nota if !i.last.nil?
+      i = Asistente.find_by_nombre("yuo33")
+      p i
+      p i.last.nombre if !i.last.nil?
     end
   end
 end

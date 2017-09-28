@@ -12,8 +12,7 @@ module Persistente
     end
 
     def included subclass
-      subclass.send :include, Persistente
-      subclass.campos_persistibles = self.campos_persistibles.clone
+      self.inherited subclass
     end
 
     attr_writer :campos_persistibles, :tabla_persistencia

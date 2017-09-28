@@ -18,8 +18,9 @@ describe 'Al usar ORM' do
 
   it "deberia poder heredar una clase persistible" do
     class AyudanteDeCatedra < Estudiante
-      has_one String, named: :tipo
     end
+
+    expect(AyudanteDeCatedra.respond_to? :find_by_id).to be true
   end
 
   it "deberia quedar intacta la clase de la que hereda" do

@@ -96,6 +96,27 @@ describe 'Al usar ORM' do
       expect(p.id).to eq nil
     end
 
+    context "y otra clase que tiene una instancia de clase ya definida" do
+
+      class Amistoso < Person
+        has_one String, named: :mejorAmigo
+
+        def initialize(mejorAmigo)
+          super(first_name, last_name, age, admin)
+          self.mejorAmigo = mejorAmigo
+        end
+
+      end
+
+      it "deberia dejarme persistir en cascada" do
+        p = Person.new
+        a = Amistoso.new(p)
+
+        a.save!
+      end
+
+    end
+
     context "y varias instancias persistidas" do
 
       before :each do

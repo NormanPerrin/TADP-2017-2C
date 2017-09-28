@@ -108,6 +108,14 @@ module ORM
       tabla = self.class.tabla_persistencia
       campos = self.class.campos_persistibles
       registro = Hash[campos.map {|k, v| [k, self.send(k.to_sym)]}]
+
+      idsPersistidos = Hash[campos
+        .select { |_, v| v.respond_to? :find_by_id }
+        .map { |k, _| [k, self.send(k.to_sym).send(:save!)] }]
+
+      # modifico las apariciones de attr persistibles por sus ids
+      registro =  Hash[registro.map { |k, v| idsPersistidos.include? k ? [k, idsPersistidos[k]] : [k, v] }]
+
       self.id= tabla.insertOrUpdate(registro)
     end
 

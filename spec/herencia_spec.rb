@@ -37,7 +37,14 @@ describe 'Al usar ORM' do
 
     e = Estudiante.new
     expect(e.respond_to? :tipo).to be false
+  end
 
+  it "deberia ser persistible una clase que incluye un mixin persistible" do
+    class Pera
+      include Persona
+    end
+
+    expect(Pera.respond_to? :find_by_id).to be true
   end
 
   after :each do

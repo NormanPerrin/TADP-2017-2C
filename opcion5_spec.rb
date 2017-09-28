@@ -210,12 +210,12 @@ context "con una clase que no existe" do
 
       p "Fin"
 
-      # module_persistente Personak do
-      #   has_one String, named: :nombre
-      # end
+      modulo_persistente Personak do
+        has_one String, named: :nombreModulo
+      end
 
       clase_persistente  Estudiante do
-        # include Personak
+        include Personak
         has_one String, named: :nombre
         has_one Numeric, named: :nota
       end
@@ -227,10 +227,12 @@ context "con una clase que no existe" do
 
       p=Estudiante.new
       p.nombre="yuo"
+      p.nombreModulo="Modulo"
       p.nota=9
       p p.nota=9
       p.save!
       p2=Asistente.new
+      p2.nombreModulo="Modulo33"
       p2.nombre="yuo33"
       p2.nota="10"
       p2.veremos="10"

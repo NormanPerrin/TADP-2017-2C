@@ -35,12 +35,16 @@ module Persistencia
       construir_metodos
       construir_evaluando_bloque(bloque)
     end
+    def construir_modulo_persistible(&bloque)
+      modulo = Object.const_set(@klass, Module.new)
+      modulo.extend(MetodosDeClase)
+      modulo.class_eval &bloque
+    end
   end
 
   module MetodosDeClase
     def crear_atributo_en_autoclase(tipo, nombre_simbolo)
       objetoTipoPersistible = TiposPersistencia.crear_tipo_peristente(nombre_simbolo, tipo)
-      #get_atributos_persistentes.push(objetoTipoPersistible)
       get_atributos_persistentes_de_clase.push(objetoTipoPersistible)
       objetoTipoPersistible
     end
@@ -129,11 +133,16 @@ module Persistencia
   end
 
   def self.clase_persistente(entorno_persitencia, &bloque)
-    if entorno_persitencia.class == ConstructorClasePersistente
-      entorno_persitencia.construir_clase_persistible(&bloque)
-    else
-      entorno_persitencia.class_eval &bloque
-    end
+    self.construir_entidad_persistente(bloque, entorno_persitencia, :construir_clase_persistible)
+  end
+
+  def self.construir_entidad_persistente(bloque, entorno_persitencia, metodo)
+    entorno_persitencia.send(metodo,&bloque) if entorno_persitencia.is_a?ConstructorClasePersistente
+    entorno_persitencia.class_eval &bloque unless entorno_persitencia.is_a?ConstructorClasePersistente
+  end
+
+  def self.modulo_persistente(entorno_persitencia, &bloque)
+    self.construir_entidad_persistente(bloque, entorno_persitencia,:construir_modulo_persistible)
   end
 
   module MetodosDeInstancia

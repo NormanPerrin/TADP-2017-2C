@@ -57,7 +57,7 @@ module ORM
 
       def inherited subclass
         subclass.send :include, Persistente
-        subclass.campos_persistibles = self.campos_persistibles
+        subclass.campos_persistibles = self.campos_persistibles.clone
       end
 
       attr_writer :campos_persistibles, :tabla_persistencia

@@ -22,6 +22,14 @@ describe 'Al usar ORM' do
     end
   end
 
+  it "deberia quedar intacta la clase de la que hereda" do
+    class AyudanteDeCatedra < Estudiante
+      has_one String, named: :tipo
+    end
+
+    expect(Estudiante.campos_persistibles.include? :tipo).to be false
+  end
+
   after :each do
     #borramos la base de datos
     FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")

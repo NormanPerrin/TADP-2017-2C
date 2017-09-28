@@ -12,8 +12,19 @@ describe 'Al usar ORM' do
   it "deberia poder incluir un modulo persistible" do
     class Estudiante
       include Persona
-      has_one Numeric, named: :nota
     end
+
+    e = Estudiante.new
+
+    expect(e.respond_to? :nombre).to be true
+  end
+
+  it "deberia ser persistible una clase al incluir un modulo persistible" do
+    class Tomate
+      include Persona
+    end
+
+    expect(Tomate.respond_to? :campos_persistibles).to be true
   end
 
   it "deberia poder heredar una clase persistible" do

@@ -30,6 +30,16 @@ describe 'Al usar ORM' do
     expect(Estudiante.campos_persistibles.include? :tipo).to be false
   end
 
+  it "deberian quedar intactas las instancias de la clase de la que hereda" do
+    class AyudanteDeCatedra < Estudiante
+      has_one String, named: :tipo
+    end
+
+    e = Estudiante.new
+    expect(e.respond_to? :tipo).to be false
+
+  end
+
   after :each do
     #borramos la base de datos
     FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")

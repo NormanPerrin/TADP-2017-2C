@@ -7,7 +7,7 @@ class IntelligentDB
   end
 
   def insertOrUpdate(hash)
-    if self.search_by_id(hash[:id]).nil?
+    if search_by_id(hash[:id]).nil?
       return insert(hash)
     else
       return update(hash)
@@ -28,7 +28,7 @@ class IntelligentDB
   end
 
   def search_by_id(id)
-    posible = self.search_by(:id, id)
+    posible = search_by(:id, id)
     return nil if posible.length == 0
     return posible[0] if posible.length == 1
     raise IOError "La base informa #{posible.length} registros con ese id."

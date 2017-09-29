@@ -26,6 +26,7 @@ module Persistente
     end
 
     def has_one(tipo_dato, metadatos)
+      raise ArgumentError.new "La clase #{tipo_dato} no es persistible" unless is_persistible(tipo_dato)
       campo = metadatos[:named]
       self.campos_persistibles[campo] = tipo_dato
       attr_accessor campo
@@ -36,7 +37,7 @@ module Persistente
       entries = tabla_persistencia.entries
       #  aca buscaria los entries de las sublcases;
       #  entries.addAll(subclases.entries)  <= recursivo, no?
-      entries.map{|hash| hash_to_instance(hash, self.new)}
+      entries.map {|hash| hash_to_instance(hash, self.new)}
     end
 
     def method_missing(sym, *args, &block)
@@ -47,14 +48,12 @@ module Persistente
       value = args[0]
 
       encontrados = tabla_persistencia.search_by(field, value)
-      encontrados.map{|hash| hash_to_instance(hash, self.new)}
+      encontrados.map {|hash| hash_to_instance(hash, self.new)}
     end
 
     def find_by_id(id)
       # Caso especial de find_by_<what>
-      dummy=self.new
-      dummy.id = id
-      self.refresh(dummy)
+      merge(self.new, id)
     end
 
     def persist(objeto)
@@ -68,28 +67,37 @@ module Persistente
       objeto.id = nil
     end
 
-    def refresh(objeto)
-      raise RuntimeError "No se puede refresh! sin antes hacer save!" if objeto.id.nil?
-      hash = self.tabla_persistencia.search_by_id(objeto.id)
-      return hash_to_instance(hash,objeto) unless hash.nil?
+    def merge(objeto,id)
+      hash = self.tabla_persistencia.search_by_id(id)
+      return hash_to_instance(hash, objeto) unless hash.nil?
       #TODO: Diseño: definir que hacer cuando el id no existe en la base: nil? excepcion?
       nil
     end
 
     private
     def instance_to_hash(instance)
-      #TODO: logica sobre campos compuestos!
-      Hash[self.campos_persistibles.map {|k, v| [k, instance.send(k.to_sym)]}]
+      Hash[self.campos_persistibles.map {
+          |campo, tipo| [campo, to_primitive(tipo, instance.send(campo.to_sym))]
+      }]
     end
 
-    def hash_to_instance(hash,instance)
+    def hash_to_instance(hash, instance)
       #TODO: logica sobre campos compuestos!
       hash.each {|k, v| instance.send "#{k}=".to_sym, v}
       instance
     end
 
-    def is_primitivo(instancia)
-      return (instancia.is_a?String) || (instancia.is_a?Numeric) || (Boolean.checks?instancia)
+    def to_primitive(tipo, valor)
+      return valor if is_primitive(tipo)
+      tipo.persist(valor)
+    end
+
+    def is_persistible(tipo_dato)
+      is_primitive(tipo_dato) || (tipo_dato < Persistente)
+    end
+
+    def is_primitive(tipo)
+      [String, Numeric, Boolean].include? tipo
     end
 
   end
@@ -106,7 +114,8 @@ module Persistente
   end
 
   def refresh!
-    self.class.refresh(self)
+    raise RuntimeError.new "No se puede refresh! sin antes hacer save!" if self.id.nil?
+    self.class.merge(self,self.id)
   end
 
   def forget!

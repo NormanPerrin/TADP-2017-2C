@@ -110,11 +110,9 @@ describe 'Al usar ORM' do
     w.nombre = 'norman'
     w.edad = 23
     w.apellido = 'perrin'
-    p W.campos_persistibles
     id = w.save!
 
     wBase = W.find_by_id id
-    p wBase
     expect((wBase.nombre == 'norman') && (wBase.apellido == 'perrin') && (wBase.edad == 23)).to be true
   end
 

@@ -75,6 +75,10 @@ module ORM
         end
       end
 
+      def extended subclass
+        puts 'Los atributos persistibles del modulo no se van a guardar, se debe hacer con include'
+      end
+
       attr_writer :campos_persistibles, :tabla_persistencia
 
       def campos_persistibles

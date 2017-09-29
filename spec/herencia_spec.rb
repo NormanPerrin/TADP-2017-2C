@@ -94,6 +94,32 @@ describe 'Al usar ORM' do
     expect(unObjecto.respond_to? :nombre).to be true
   end
 
+  it "deberia guardar campo persistible de modulo, herencia y clase" do
+    module Y
+      has_one String, named: :nombre
+    end
+
+    class K
+      has_one String, named: :apellido
+    end
+
+    class W < K
+      include Y
+      has_one Numeric, named: :edad
+    end
+
+    subm = W.new
+    subm.nombre = 'norman'
+    subm.edad = 23
+    subm.apellido = 'perrin'
+    id = subm.save!
+
+    unObjecto = W.find_by_id id
+    p unObjecto
+
+    expect((unObjecto.respond_to? :nombre) && (unObjecto.respond_to? :apellido) && (unObjecto.respond_to? :edad)).to be true
+  end
+
   after :each do
     #borramos la base de datos
     FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")

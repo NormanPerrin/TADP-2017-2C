@@ -71,9 +71,9 @@ describe 'Al usar ORM' do
     subc.nombre = 'norman'
     id = subc.save!
 
-    unHash = SoySubClase.find_by_id id
-    p unHash
-    expect(unHash.respond_to? :nombre).to be true
+    unObjecto = SoySubClase.find_by_id id
+    p unObjecto
+    expect(unObjecto.respond_to? :nombre).to be true
   end
 
   it "deberia guardar todos los campos incluidos por modulo" do
@@ -89,9 +89,9 @@ describe 'Al usar ORM' do
     subm.nombre = 'norman'
     id = subm.save!
 
-    unHash = SoySubClase.find_by_id id
-    p unHash
-    expect(unHash.respond_to? :nombre).to be true
+    unObjecto = F.find_by_id id
+    p unObjecto
+    expect(unObjecto.respond_to? :nombre).to be true
   end
 
   after :each do

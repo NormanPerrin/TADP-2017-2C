@@ -110,6 +110,7 @@ describe 'Al usar ORM' do
     w.nombre = 'norman'
     w.edad = 23
     w.apellido = 'perrin'
+    p W.campos_persistibles
     id = w.save!
 
     wBase = W.find_by_id id

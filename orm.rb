@@ -57,12 +57,22 @@ module ORM
 
       def inherited subclass
         subclass.send :include, Persistente
-        subclass.campos_persistibles = self.campos_persistibles.clone
+
+        unless defined?(subclass.campos_persistibles).nil?
+          subclass.campos_persistibles = subclass.campos_persistibles.merge(self.campos_persistibles.clone)
+        else
+          subclass.campos_persistibles = self.campos_persistibles.clone
+        end
       end
 
       def included subclass
         subclass.send :include, Persistente
-        subclass.campos_persistibles = self.campos_persistibles.clone
+
+        unless defined?(subclass.campos_persistibles).nil?
+          subclass.campos_persistibles = subclass.campos_persistibles.merge(self.campos_persistibles.clone)
+        else
+          subclass.campos_persistibles = self.campos_persistibles.clone
+        end
       end
 
       attr_writer :campos_persistibles, :tabla_persistencia

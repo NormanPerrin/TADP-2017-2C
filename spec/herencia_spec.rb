@@ -72,8 +72,7 @@ describe 'Al usar ORM' do
     id = subc.save!
 
     unObjecto = SoySubClase.find_by_id id
-    p unObjecto
-    expect(unObjecto.respond_to? :nombre).to be true
+    expect(unObjecto.nombre == 'norman').to be true
   end
 
   it "deberia guardar todos los campos incluidos por modulo" do
@@ -89,9 +88,8 @@ describe 'Al usar ORM' do
     subm.nombre = 'norman'
     id = subm.save!
 
-    unObjecto = F.find_by_id id
-    p unObjecto
-    expect(unObjecto.respond_to? :nombre).to be true
+    rBase = F.find_by_id id
+    expect(rBase.nombre == 'norman').to be true
   end
 
   it "deberia guardar campo persistible de modulo, herencia y clase" do
@@ -108,16 +106,15 @@ describe 'Al usar ORM' do
       has_one Numeric, named: :edad
     end
 
-    subm = W.new
-    subm.nombre = 'norman'
-    subm.edad = 23
-    subm.apellido = 'perrin'
-    id = subm.save!
+    w = W.new
+    w.nombre = 'norman'
+    w.edad = 23
+    w.apellido = 'perrin'
+    id = w.save!
 
-    unObjecto = W.find_by_id id
-    p unObjecto
-
-    expect((unObjecto.respond_to? :nombre) && (unObjecto.respond_to? :apellido) && (unObjecto.respond_to? :edad)).to be true
+    wBase = W.find_by_id id
+    p wBase
+    expect((wBase.nombre == 'norman') && (wBase.apellido == 'perrin') && (wBase.edad == 23)).to be true
   end
 
   after :each do

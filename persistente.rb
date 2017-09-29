@@ -1,4 +1,5 @@
 module Persistente
+  require_relative 'restricciones'
 
   def self.included clase
     clase.extend MetodosClase
@@ -26,11 +27,15 @@ module Persistente
     end
 
     def has_one(tipo_dato, metadatos)
-      raise ArgumentError.new "La clase #{tipo_dato} no es persistible" unless is_persistible(tipo_dato)
+      raise ArgumentError.new "La clase #{tipo_dato} no es persistible" unless RestriccionFactory.is_persistible(tipo_dato)
       campo = metadatos[:named]
-      self.campos_persistibles[campo] = tipo_dato
+      self.campos_persistibles[campo] = [(RestriccionFactory.crear tipo_dato)]
       attr_accessor campo
       # puts "atributo #{campo} de tipo #{tipo_dato}."
+    end
+
+    def has_many(tipo_dato, metadatos)
+      has_one([tipo_dato], metadatos)
     end
 
     def all_instances
@@ -51,7 +56,7 @@ module Persistente
       encontrados.map {|hash| hash_to_instance(hash, self.new)}
     end
 
-    def respond_to_missing?(sym,include_private = false)
+    def respond_to_missing?(sym, include_private = false)
       sym.to_s.start_with? "find_by_" || super
     end
 
@@ -71,7 +76,7 @@ module Persistente
       objeto.id = nil
     end
 
-    def merge(objeto,id)
+    def merge(objeto, id)
       hash = self.tabla_persistencia.search_by_id(id)
       return hash_to_instance(hash, objeto) unless hash.nil?
       #TODO: Diseño: definir que hacer cuando el id no existe en la base: nil? excepcion?
@@ -79,43 +84,32 @@ module Persistente
     end
 
     def is_valid(instance)
-      self.campos_persistibles.all?{
-        |nombre,tipo| (instance.send nombre.to_sym).is_a? tipo
-      }
+      self.campos_persistibles.all? do |nombre, restricciones|
+        valor = instance.send nombre.to_sym
+        restricciones.all? {|restriccion| restriccion.passes?(valor)}
+      end
     end
 
     private
     def instance_to_hash(instance)
-      Hash[self.campos_persistibles.map {
-          |nombre, tipo| [nombre, to_primitive(tipo, instance.send(nombre.to_sym))]
-      }]
+      Hash[self.campos_persistibles.map do |nombre, restricciones|
+        inicial = instance.send(nombre.to_sym)
+        fold = restricciones.reduce(inicial) do |acum, restriccion|
+          restriccion.transform_to_db(acum)
+        end
+        [nombre, fold]
+      end]
     end
 
     def hash_to_instance(hash, instance)
-      #TODO: logica sobre campos compuestos!
-      hash.each {|nombre, valor| instance.send "#{nombre}=".to_sym, valor}
+      self.campos_persistibles.each do |nombre, restricciones|
+        valor = hash[nombre]
+        restricciones_tipo = restricciones.select {|restriccion| restriccion.is_a? RestriccionTipo}
 
-      self.campos_persistibles.select{
-        |nombre,tipo| !is_primitive(tipo)
-      }.each{
-        |nombre, tipo|
-          valor = tipo.find_by_id(hash[nombre])
-          instance.send "#{nombre}=".to_sym, valor
-      }
+        raise StandardError.new "Se esperaba solamente una restriccion de tipo" if restricciones_tipo.length != 1
+        instance.send "#{nombre}=".to_sym, restricciones_tipo[0].transform_to_instance(valor)
+      end
       instance
-    end
-
-    def to_primitive(tipo, valor)
-      return valor if is_primitive(tipo)
-      tipo.persist(valor)
-    end
-
-    def is_persistible(tipo_dato)
-      is_primitive(tipo_dato) || (tipo_dato < Persistente)
-    end
-
-    def is_primitive(tipo)
-      [String, Numeric, Boolean].include? tipo
     end
 
   end
@@ -133,7 +127,7 @@ module Persistente
 
   def refresh!
     raise RuntimeError.new "No se puede refresh! sin antes hacer save!" if self.id.nil?
-    self.class.merge(self,self.id)
+    self.class.merge(self, self.id)
   end
 
   def forget!

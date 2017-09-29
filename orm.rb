@@ -16,15 +16,13 @@ module ORM
   refine Module do
     def has_one(tipo_dato, metadatos)
       self.send :include, Persistente
-      # puts "clase #{self} inicializada para persistencia"
       has_one(tipo_dato, metadatos)
     end
 
-=begin
     def has_many(tipo_dato, metadatos)
-      #......
+      self.send :include, Persistente
+      has_many(tipo_dato, metadatos)
     end
-=end
   end
 
 end

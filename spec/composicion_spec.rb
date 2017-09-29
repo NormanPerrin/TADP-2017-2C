@@ -60,6 +60,20 @@ describe 'Al usar ORM con composicion' do
       expect(recuperado.grade).to have_attributes(:value => chavo.grade.value)
     end
 
+    context "y se guardan multiples instancias" do
+      class ReportCard
+        has_many Grade, named: :grades
+      end
+
+      it "deberia persistirlos como lista" do
+        libreta = ReportCard.new
+        libreta.grades = [(Grade.new 7), (Grade.new 6), (Grade.new 4)]
+        libreta.save!
+
+        expect(Grade.all_instances.length).to eq(3)
+      end
+    end
+
   end
 
   after :each do

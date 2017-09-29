@@ -1,12 +1,17 @@
 module ORM
-require_relative 'intelligentdb'
-require_relative 'persistente'
+  require_relative 'intelligentdb'
+  require_relative 'persistente'
 
-  Object.const_set :Boolean, Class.new do
-    def checks(instancia)
-      [true,false].include? self
-    end
+  Object.const_set :Boolean, Module.new
+
+  refine FalseClass do
+    include Boolean
   end
+
+  refine TrueClass do
+    include Boolean
+  end
+
 
   refine Module do
     def has_one(tipo_dato, metadatos)

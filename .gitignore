@@ -1,2 +1,3 @@
 .idea/**
 db/
+.byebug_history

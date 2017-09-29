@@ -74,6 +74,12 @@ module Persistente
       nil
     end
 
+    def is_valid(instance)
+      self.campos_persistibles.all?{
+        |nombre,tipo| (instance.send nombre.to_sym).is_a? tipo
+      }
+    end
+
     private
     def instance_to_hash(instance)
       Hash[self.campos_persistibles.map {
@@ -118,7 +124,7 @@ module Persistente
   end
 
   def validate!
-    true #implementar!
+    self.class.is_valid(self)
   end
 
   def refresh!

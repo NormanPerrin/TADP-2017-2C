@@ -77,13 +77,21 @@ module Persistente
     private
     def instance_to_hash(instance)
       Hash[self.campos_persistibles.map {
-          |campo, tipo| [campo, to_primitive(tipo, instance.send(campo.to_sym))]
+          |nombre, tipo| [nombre, to_primitive(tipo, instance.send(nombre.to_sym))]
       }]
     end
 
     def hash_to_instance(hash, instance)
       #TODO: logica sobre campos compuestos!
-      hash.each {|k, v| instance.send "#{k}=".to_sym, v}
+      hash.each {|nombre, valor| instance.send "#{nombre}=".to_sym, valor}
+
+      self.campos_persistibles.select{
+        |nombre,tipo| !is_primitive(tipo)
+      }.each{
+        |nombre, tipo|
+          valor = tipo.find_by_id(hash[nombre])
+          instance.send "#{nombre}=".to_sym, valor
+      }
       instance
     end
 

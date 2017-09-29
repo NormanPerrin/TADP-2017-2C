@@ -87,7 +87,7 @@ describe 'Al usar ORM' do
     end
 
     it "deberia fallar si intento refrescar una instancia aun no persistida" do
-      expect{Person.new.refresh!}.to raise_error(StandardError)
+      expect {Person.new.refresh!}.to raise_error(StandardError)
     end
 
     it 'deberia dejarme eliminar' do

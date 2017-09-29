@@ -14,9 +14,7 @@ describe 'Al usar ORM' do
       include Persona
     end
 
-    e = Estudiante.new
-
-    expect(e.respond_to? :nombre).to be true
+    expect(Estudiante.new).to respond_to(:nombre)
   end
 
   it "deberia ser persistible una clase al incluir un modulo persistible" do
@@ -24,14 +22,18 @@ describe 'Al usar ORM' do
       include Persona
     end
 
-    expect(Tomate.respond_to? :campos_persistibles).to be true
+    tomate = Tomate.new
+    tomate.nombre = "tomate asesino"
+    tomate.save!
+
+    expect(tomate).to respond_to(:id)
   end
 
   it "deberia poder heredar una clase persistible" do
     class AyudanteDeCatedra < Estudiante
     end
 
-    expect(AyudanteDeCatedra.respond_to? :find_by_id).to be true
+    expect(AyudanteDeCatedra).to respond_to(:find_by_id)
   end
 
   it "deberia quedar intacta la clase de la que hereda" do
@@ -39,7 +41,7 @@ describe 'Al usar ORM' do
       has_one String, named: :tipo
     end
 
-    expect(Estudiante.campos_persistibles.include? :tipo).to be false
+    expect(Estudiante.campos_persistibles).not_to include(:tipo)
   end
 
   it "deberian quedar intactas las instancias de la clase de la que hereda" do
@@ -47,8 +49,7 @@ describe 'Al usar ORM' do
       has_one String, named: :tipo
     end
 
-    e = Estudiante.new
-    expect(e.respond_to? :tipo).to be false
+    expect(Estudiante.new).not_to respond_to(:tipo)
   end
 
   it "deberia ser persistible una clase que incluye un mixin persistible" do
@@ -56,7 +57,7 @@ describe 'Al usar ORM' do
       include Persona
     end
 
-    expect(Pera.respond_to? :find_by_id).to be true
+    expect(Pera).to respond_to(:find_by_id)
   end
 
   after :each do

@@ -51,6 +51,10 @@ module Persistente
       encontrados.map {|hash| hash_to_instance(hash, self.new)}
     end
 
+    def respond_to_missing?(sym,include_private = false)
+      sym.to_s.start_with? "find_by_" || super
+    end
+
     def find_by_id(id)
       # Caso especial de find_by_<what>
       merge(self.new, id)

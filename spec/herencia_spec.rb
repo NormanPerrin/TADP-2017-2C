@@ -129,18 +129,18 @@ describe 'Al usar ORM' do
     expect((MM.descendants.include? CC) && (MM.descendants.include? AA)).to eq true
   end
 
-  # <-- metodos que se relacionan con herencia -->
+  # <-- find_by_id -->
   it "deberia responder con una lista de 1 elemento find_by_id llamado desde un padre con 1 instancia en hijos" do
-    module LL ; has_one String, named: :nombre ; end
-    class OO ; include LL ; has_one String, named: :apellido ; end
-    class QQ < OO ; end
+    module VV ; has_one String, named: :nombre ; end
+    class ZZ ; include VV ; has_one String, named: :apellido ; end
+    class UU < ZZ ; end
 
-    q = QQ.new
+    q = UU.new
     q.nombre='norman'
     q.apellido='perrin'
     idQ= q.save!
 
-    resultados= LL.find_by_id idQ
+    resultados= VV.find_by_id idQ
     expect(resultados.length == 1).to eq true
   end
 
@@ -157,6 +157,50 @@ describe 'Al usar ORM' do
     resultados= LL.find_by_id idQ
     expect(resultados[0].id == idQ).to eq true
   end
+
+  # <-- no se puede testear sin un update -->
+  # it "deberia responder con una lista de 2 elementos instanciado desde hijo en find_by_id llamado desde un padre" do
+  #   module LLL ; has_one String, named: :nombre ; end
+  #   class OOO ; include LLL ; has_one String, named: :apellido ; end
+  #   class QQQ < OOO ; end
+
+  #   q = QQQ.new
+  #   q.nombre='norman'
+  #   q.apellido='perrin'
+  #   q.id = '123'
+  #   q.save!
+
+  #   o = OOO.new
+  #   o.nombre='alberto'
+  #   o.apellido='rodriguez'
+  #   o.id = '123'
+  #   o.save!
+
+  #   resultados= LLL.find_by_id 123
+  #   expect(resultados.length == 2).to eq true
+  # end
+
+  # it "deberia responder con una lista de los 2 elementos instanciados desde hijo en find_by_id llamado desde un padre" do
+  #   module LLL ; has_one String, named: :nombre ; end
+  #   class OOO ; include LLL ; has_one String, named: :apellido ; end
+  #   class QQQ < OOO ; end
+
+  #   q = QQQ.new
+  #   q.nombre='norman'
+  #   q.apellido='perrin'
+  #   q.id = '123'
+  #   q.save!
+
+  #   o = OOO.new
+  #   o.nombre='alberto'
+  #   o.apellido='rodriguez'
+  #   o.id = '123'
+  #   o.save!
+
+  #   resultados= LLL.find_by_id '123'
+  #   p resultados
+  #   expect((resultados[0].nombre == 'norman') && (resultados[1].nombre == 'alberto')).to eq true
+  # end
 
   after :each do
     #borramos la base de datos

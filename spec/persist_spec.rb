@@ -59,14 +59,14 @@ describe 'Al usar ORM' do
     end
 
     it "deberia buscar por id inexistente y retornar nil" do
-      expect(Person.find_by_id 123).to eq nil
+      expect((Person.find_by_id 123).length == 0).to eq true
     end
 
     it "deberia buscar por id existente y retornar objeto" do
       p = Person.new
       p.save!
 
-      found = Person.find_by_id p.id
+      found = (Person.find_by_id p.id)[0]
 
       expect(found).to have_attributes(
                            :first_name => p.first_name,

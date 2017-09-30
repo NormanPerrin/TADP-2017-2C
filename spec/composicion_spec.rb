@@ -54,7 +54,7 @@ describe 'Al usar ORM con composicion' do
       chavo.grade = Grade.new 0 #que bruto, pongale 0
       chavo.save!
 
-      recuperado = Student.find_by_id(chavo.id)
+      recuperado = Student.find_by_id(chavo.id)[0]
 
       expect(recuperado).to have_attributes(:full_name => chavo.full_name)
       expect(recuperado.grade).to have_attributes(:value => chavo.grade.value)

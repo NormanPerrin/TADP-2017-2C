@@ -66,7 +66,7 @@ class RestriccionPersistible < RestriccionTipo
   end
 
   def transform_to_instance(value)
-    @tipo.find_by_id value
+    (@tipo.find_by_id value)[0]
   end
 end
 
@@ -111,7 +111,7 @@ class RestriccionMany < RestriccionTipo
       if RestriccionFactory.is_primitivo(@tipo)
         hash[:value]
       else
-        @tipo.find_by_id value
+        (@tipo.find_by_id value)[0]
       end
     end
   end

@@ -7,13 +7,29 @@ module Persistente
 
   module MetodosClase
 
+    def descendants ; @descendants ||= [] ; end
+
     def inherited subclass
+      descendants.push subclass
+      unless (self.ancestors[1].to_s == "Persistente")
+        self.ancestors[1].descendants.push subclass
+      end
+
       subclass.send :include, Persistente
-      subclass.campos_persistibles = self.campos_persistibles.clone
+
+      unless defined?(subclass.campos_persistibles).nil?
+        subclass.campos_persistibles = subclass.campos_persistibles.merge(self.campos_persistibles.clone)
+      else
+        subclass.campos_persistibles = self.campos_persistibles.clone
+      end
     end
 
     def included subclass
       self.inherited subclass
+    end
+
+    def extended subclass
+      raise "No se puede hacer extended de un modulo persistible"
     end
 
     attr_writer :campos_persistibles, :tabla_persistencia
@@ -39,10 +55,23 @@ module Persistente
     end
 
     def all_instances
-      entries = tabla_persistencia.entries
-      #  aca buscaria los entries de las sublcases;
-      #  entries.addAll(subclases.entries)  <= recursivo, no?
-      entries.map {|hash| hash_to_instance(hash, self.new)}
+      if self.descendants.length > 0
+        subInstancias = self.descendants[0].all_instances if self.descendants.length > 0
+      else
+        subInstancias = []
+      end
+
+      if self.class.to_s == 'Module'
+        subInstancias.flatten
+      else
+        entries = tabla_persistencia.entries
+        instancias = entries.map do |hash|
+          dummy = self.new
+          dummy.id = hash[:id]
+          hash_to_instance(hash, dummy)
+        end
+        instancias.concat(subInstancias).flatten
+      end
     end
 
     def method_missing(sym, *args, &block)
@@ -52,8 +81,23 @@ module Persistente
       field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
       value = args[0]
 
-      encontrados = tabla_persistencia.search_by(field, value)
-      encontrados.map {|hash| hash_to_instance(hash, self.new)}
+      if (self.descendants.select { |subclass| !(subclass.instance_methods.include? field) }).length > 0
+        raise "Falla! No todos entienden #{field}" 
+      end
+
+      if self.class.to_s == 'Module'
+        return self.descendants[0].send("find_by_#{field}", value).flatten if self.descendants.length > 0
+        return []
+      else 
+        misEncontrados = tabla_persistencia.search_by(field, value)
+        misIntancias = misEncontrados.map do |hash|
+          dummy = self.new
+          dummy.id = hash[:id]
+          hash_to_instance(hash, dummy)
+        end
+        return self.descendants[0].send("find_by_#{field}", value).concat(misIntancias).flatten if self.descendants.length > 0
+        return misIntancias.flatten
+      end
     end
 
     def respond_to_missing?(sym, include_private = false)
@@ -61,8 +105,21 @@ module Persistente
     end
 
     def find_by_id(id)
-      # Caso especial de find_by_<what>
-      merge(self.new, id)
+      if self.class.to_s == 'Module'
+        return (self.descendants[0].find_by_id id).flatten if self.descendants.length > 0
+        return []
+      else
+        dummy=self.new
+        dummy.id = id
+        clase = self.merge(dummy, id)
+        if (clase.nil?)
+          return (self.descendants[0].find_by_id id).flatten if self.descendants.length > 0
+          return []
+        else
+          return (self.descendants[0].find_by_id id).push(clase).flatten if self.descendants.length > 0
+          return [clase]
+        end
+      end
     end
 
     def persist(objeto)

@@ -4,7 +4,7 @@ class RestriccionFactory
     return RestriccionMany.new tipo_dato[0], nombre_campo if is_composicion_multiple(tipo_dato)
     return RestriccionPersistible.new tipo_dato if is_composicion_simple(tipo_dato)
     return RestriccionPrimitivo.new tipo_dato if is_primitivo(tipo_dato)
-    return RestriccionContenido.new tipo_dato
+    raise ArgumentError.new "El tipo #{tipo_dato} no se puede persistir"
   end
 
   def self.is_primitivo(tipo_dato)
@@ -27,22 +27,14 @@ class RestriccionFactory
 
 end
 
-class Restriccion
-  def passes? value
-    #Testea el contenido de un atributo
-    #Permite (o no) guardarlo en la base
-    return true
-  end
-end
-
-class RestriccionTipo < Restriccion
+class RestriccionTipo
 
   def initialize(tipo_dato)
     @tipo = tipo_dato
   end
 
-  def pases? value
-    value.is_a? @tipo
+  def try value,name
+    raise RuntimeError.new "El valor #{value} de #{name} no es un #{@tipo}" unless value.is_a? @tipo
   end
 
   def transform_to_hash(value)
@@ -55,7 +47,6 @@ class RestriccionTipo < Restriccion
     value
   end
 end
-
 
 class RestriccionPrimitivo < RestriccionTipo
 end
@@ -77,9 +68,9 @@ class RestriccionMany < RestriccionTipo
     @tabla_intermedia = TADB::DB.table("#{tipo_dato}_#{nombre_campo}")
   end
 
-  def passes? values
-    return false unless values.is_a? Array
-    values.all? {|elem| elem.is_a? @tipo}
+  def try values,name
+    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}" unless
+    values.is_a? Array and values.all? {|elem| elem.is_a? @tipo}
   end
 
   def transform_to_hash(values)
@@ -116,4 +107,60 @@ class RestriccionMany < RestriccionTipo
     end
   end
 
+end
+
+class RestriccionContenidoFactory
+
+  def self.crear hash
+    hash.map {|k,v| crear_restriccion(k,v)}.select {|v| !v.nil?}
+  end
+
+  def self.crear_restriccion(key,value)
+    return RestriccionNoBlank.new if key==:no_blank and value
+    return RestriccionFrom.new value if key==:from
+    return RestriccionTo.new value if key==:to
+    return RestriccionValidate.new value if key==:validate
+    #Ignoramos :named y :default (retorna nil)
+  end
+
+end
+
+class RestriccionNoBlank
+  def try value, name
+    raise RuntimeError.new "El valor de #{name} no debe estar vacio" unless
+    !(value == "" or value.nil?)
+  end
+end
+
+class RestriccionFrom
+  def initialize from
+    @from=from
+  end
+
+  def try value,name
+    raise RuntimeError.new "#{value} es menor a #{from} para el atributo #{name}" unless
+    value >= @from
+  end
+end
+
+class RestriccionTo
+  def initialize to
+    @to=to
+  end
+
+  def try value,name
+    raise RuntimeError.new "#{value} es menor a #{from} para el atributo #{name}" unless
+    value <= @to
+  end
+end
+
+class RestriccionValidate
+  def initialize proc
+    @bloque = proc
+  end
+
+  def try value,name
+    raise RuntimeError.new "#{value} no cumple con el procedimiento definido para el atributo #{name}" unless
+    value.instance_eval &@bloque
+  end
 end

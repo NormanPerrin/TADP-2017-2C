@@ -1,6 +1,7 @@
 module ORM
   require_relative 'intelligentdb'
   require_relative 'persistente'
+  require_relative 'restricciones'
 
   Object.const_set :Boolean, Module.new
 
@@ -11,7 +12,6 @@ module ORM
   refine TrueClass do
     include Boolean
   end
-
 
   refine Module do
     def has_one(tipo_dato, metadatos)

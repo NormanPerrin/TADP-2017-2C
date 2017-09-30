@@ -88,7 +88,7 @@ module ORM
       end
 
       def extended subclass
-        raise RuntimeError "No se puede hacer extended de un modulo persistible"
+        raise "No se puede hacer extended de un modulo persistible"
       end
 
       attr_writer :campos_persistibles, :tabla_persistencia
@@ -108,9 +108,12 @@ module ORM
         # puts "atributo #{campo} de tipo #{tipo_dato}."
       end
 
-      # TODO: arreglar que trae duplicados
       def all_instances
-        subInstancias = self.descendants.map { |subclase| subclase.all_instances.flatten }
+        if self.descendants.length > 0
+          subInstancias = self.descendants[0].all_instances if self.descendants.length > 0
+        else
+          subInstancias = []
+        end
         if self.class.to_s == 'Module'
           subInstancias.flatten
         else
@@ -126,26 +129,36 @@ module ORM
         field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
         value = args[0]
 
+        if (self.descendants.select { |subclass| !(subclass.instance_methods.include? field) }).length > 0
+          raise "Falla! No todos entienden #{field}" 
+        end
+
         if self.class.to_s == 'Module'
-          subInstanciasEncontradas = self.descendants.map { |subclase| subclase.send("find_by_#{field} (value)").flatten }.flatten
+          return self.descendants[0].send("find_by_#{field}", value).flatten if self.descendants.length > 0
+          return []
         else 
           misEncontrados = tabla_persistencia.search_by(field, value)
           misIntancias = misEncontrados.map{|hash| hash_to_instance(hash, self.new)}
-          subInstanciasEncontradas = self.descendants.map { |subclase| subclase.send("find_by_#{field} (value)").flatten }.flatten
-          subInstanciasEncontradas.concat(misIntancias)
+          return self.descendants[0].send("find_by_#{field}", value).concat(misIntancias).flatten if self.descendants.length > 0
+          return misIntancias.flatten
         end
-
       end
 
-      # TODO: arreglar que trae duplicados
       def find_by_id(id)
         if self.class.to_s == 'Module'
-          self.descendants.map { |subclase| (subclase.find_by_id id).flatten }.flatten
+          return (self.descendants[0].find_by_id id).flatten if self.descendants.length > 0
+          return []
         else
           dummy=self.new
           dummy.id = id
           clase = self.refresh(dummy)
-          self.descendants.map { |subclase| (subclase.find_by_id id).flatten }.push(clase).flatten
+          if (clase.nil?)
+            return (self.descendants[0].find_by_id id).flatten if self.descendants.length > 0
+            return []
+          else
+            return (self.descendants[0].find_by_id id).push(clase).flatten if self.descendants.length > 0
+            return [clase]
+          end
         end
       end
 

@@ -333,7 +333,6 @@ describe 'Al usar ORM' do
     o.save!
 
     resultados= JSU.find_by_nombre 'norman'
-    p resultados
     expect((resultados[0].apellido == 'perrin') && (resultados[1].apellido == 'cabezempanada')).to eq true
   end
 

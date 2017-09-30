@@ -202,6 +202,73 @@ describe 'Al usar ORM' do
   #   expect((resultados[0].nombre == 'norman') && (resultados[1].nombre == 'alberto')).to eq true
   # end
 
+  # <-- all_instances -->
+  it "deberia responder con una lista de 1 elemento con all_instances llamado desde un padre" do
+    module WDW ; has_one String, named: :nombre ; end
+    class ZDZ ; include WDW ; has_one String, named: :apellido ; end
+    class UDU < ZDZ ; end
+
+    q = UDU.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    resultados= WDW.all_instances
+    expect(resultados.length == 1).to eq true
+  end
+
+  it "deberia responder con una lista del elemento con all_instances llamado desde un padre" do
+    module KJK ; has_one String, named: :nombre ; end
+    class MNM ; include KJK ; has_one String, named: :apellido ; end
+    class VNV < MNM ; end
+
+    q = VNV.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    id= q.save!
+
+    resultados= KJK.all_instances
+    expect(resultados[0].id == id).to eq true
+  end
+
+  it "deberia responder con una lista de 2 elementos con all_instances llamado desde un padre" do
+    module III ; has_one String, named: :nombre ; end
+    class LG ; include III ; has_one String, named: :apellido ; end
+    class PW < LG ; end
+
+    q = PW.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    o = LG.new
+    o.nombre='pedro'
+    o.apellido='cabezempanada'
+    o.save!
+
+    resultados= III.all_instances
+    expect(resultados.length == 2).to eq true
+  end
+
+  it "deberia responder con una lista de los 2 elementos con all_instances llamado desde un padre" do
+    module YACA ; has_one String, named: :nombre ; end
+    class LOL ; include YACA ; has_one String, named: :apellido ; end
+    class AHRE < LOL ; end
+
+    q = AHRE.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    o = LOL.new
+    o.nombre='pedro'
+    o.apellido='cabezempanada'
+    o.save!
+
+    resultados= YACA.all_instances
+    expect((resultados[0].nombre == 'pedro') && (resultados[1].nombre == 'norman')).to eq true
+  end
+
   after :each do
     #borramos la base de datos
     FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")

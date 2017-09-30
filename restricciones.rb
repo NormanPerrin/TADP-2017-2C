@@ -69,6 +69,7 @@ class RestriccionMany < RestriccionTipo
   end
 
   def try values,name
+    byebug
     raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}" unless
     values.is_a? Array and values.all? {|elem| elem.is_a? @tipo}
   end

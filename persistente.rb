@@ -29,7 +29,7 @@ module Persistente
     def has_one(tipo_dato, metadatos)
       raise ArgumentError.new "La clase #{tipo_dato} no es persistible" unless RestriccionFactory.is_persistible(tipo_dato)
       campo = metadatos[:named]
-      self.campos_persistibles[campo] = [(RestriccionFactory.crear tipo_dato)]
+      self.campos_persistibles[campo] = [(RestriccionFactory.crear tipo_dato, campo)]
       attr_accessor campo
       # puts "atributo #{campo} de tipo #{tipo_dato}."
     end
@@ -69,6 +69,11 @@ module Persistente
       hash = instance_to_hash(objeto)
       id_generado = self.tabla_persistencia.insertOrUpdate(hash)
       objeto.id = id_generado
+      has_many_restrictions.each do |nombre, restriccion|
+        lista = objeto.send nombre
+        restriccion.persist_join(id_generado, lista)
+      end
+      id_generado
     end
 
     def remove(objeto)
@@ -78,9 +83,17 @@ module Persistente
 
     def merge(objeto, id)
       hash = self.tabla_persistencia.search_by_id(id)
-      return hash_to_instance(hash, objeto) unless hash.nil?
-      #TODO: Diseño: definir que hacer cuando el id no existe en la base: nil? excepcion?
-      nil
+      if hash.nil?
+        #TODO: Diseño: definir que hacer cuando el id no existe en la base: nil? excepcion?
+        return nil
+      end
+
+      hash_to_instance(hash, objeto)
+      has_many_restrictions.each do |nombre, restriccion|
+        lista = objeto.send nombre
+        lista.push(restriccion.recover_join(id))
+      end
+      objeto
     end
 
     def is_valid(instance)
@@ -91,23 +104,36 @@ module Persistente
     end
 
     private
-    def instance_to_hash(instance)
-      Hash[self.campos_persistibles.map do |nombre, restricciones|
-        inicial = instance.send(nombre.to_sym)
-        fold = restricciones.reduce(inicial) do |acum, restriccion|
-          restriccion.transform_to_db(acum)
+
+    def has_many_restrictions
+      self.campos_persistibles.map {|nombre, restricciones|
+        r_has_many = restricciones.select {|restriccion| restriccion.is_a? RestriccionMany}
+        if r_has_many.length !=1
+          [nombre, nil]
+        else
+          [nombre, r_has_many[0]]
         end
-        [nombre, fold]
+      }.reject {|k, v| v.nil?}
+    end
+
+    def restriccion_tipo(restricciones)
+      restricciones_tipo = restricciones.select {|restriccion| restriccion.is_a? RestriccionTipo}
+      raise StandardError.new "Se esperaba solamente una restriccion de tipo" if restricciones_tipo.length != 1
+      return restricciones_tipo[0]
+    end
+
+    def instance_to_hash(instance)
+      hash = Hash[self.campos_persistibles.map do |nombre, restricciones|
+        valor = instance.send(nombre.to_sym)
+        [nombre, restriccion_tipo(restricciones).transform_to_hash(valor)]
       end]
+      hash.reject {|key, val| val.nil?}
     end
 
     def hash_to_instance(hash, instance)
       self.campos_persistibles.each do |nombre, restricciones|
         valor = hash[nombre]
-        restricciones_tipo = restricciones.select {|restriccion| restriccion.is_a? RestriccionTipo}
-
-        raise StandardError.new "Se esperaba solamente una restriccion de tipo" if restricciones_tipo.length != 1
-        instance.send "#{nombre}=".to_sym, restricciones_tipo[0].transform_to_instance(valor)
+        instance.send "#{nombre}=".to_sym, restriccion_tipo(restricciones).transform_to_instance(valor)
       end
       instance
     end

@@ -1,7 +1,7 @@
 class RestriccionFactory
 
-  def self.crear tipo_dato
-    return RestriccionMany.new tipo_dato if is_composicion_multiple(tipo_dato)
+  def self.crear tipo_dato, nombre_campo
+    return RestriccionMany.new tipo_dato[0], nombre_campo if is_composicion_multiple(tipo_dato)
     return RestriccionPersistible.new tipo_dato if is_composicion_simple(tipo_dato)
     return RestriccionPrimitivo.new tipo_dato if is_primitivo(tipo_dato)
     return RestriccionContenido.new tipo_dato
@@ -27,7 +27,6 @@ class RestriccionFactory
 
 end
 
-#Interfaz
 class Restriccion
   def passes? value
     #Testea el contenido de un atributo
@@ -46,17 +45,13 @@ class RestriccionTipo < Restriccion
     value.is_a? @tipo
   end
 
-  def transform_to_db(value)
+  def transform_to_hash(value)
     #Transforma el atributo a un tipo primitivo
-    #Realiza los pasos intermedios para persistir el atributo (si no es primitivo)
-    #Si es un objeto compuesto, lo persiste y en su lugar devuelve el id
     value
   end
 
   def transform_to_instance(value)
     #Transforma un valor primitivo a atributo
-    #Realiza los pasos intermedios para construir el atributo (si no es primitivo)
-    #Si es un objeto compuesto, busca por id y lo instancia.
     value
   end
 end
@@ -66,7 +61,7 @@ class RestriccionPrimitivo < RestriccionTipo
 end
 
 class RestriccionPersistible < RestriccionTipo
-  def transform_to_db(value)
+  def transform_to_hash(value)
     @tipo.persist(value)
   end
 
@@ -76,15 +71,49 @@ class RestriccionPersistible < RestriccionTipo
 end
 
 class RestriccionMany < RestriccionTipo
-  def passes? value
-    value.is_a? @tipo
+
+  def initialize(tipo_dato, nombre_campo)
+    super(tipo_dato)
+    @tabla_intermedia = TADB::DB.table("#{tipo_dato}_#{nombre_campo}")
   end
 
-  def transform_to_db(value)
-    #Aca haria el manytomany en la base
+  def passes? values
+    return false unless values.is_a? Array
+    values.all? {|elem| elem.is_a? @tipo}
   end
 
-  def transform_to_instance(value)
-    #Aca leeria el manytomany en la base
+  def transform_to_hash(values)
+    #no se persisten los valores en la entidad sino en una tabla intermedia
+    nil
   end
+
+  def transform_to_instance(values)
+    #no se recuperan los valores desde el hash sino desde la tabla intermedia
+    []
+  end
+
+  def persist_join(id, values)
+    values.each do |val|
+      hash = Hash.new
+      hash[:id] = id
+      if RestriccionFactory.is_primitivo(@tipo)
+        hash[:value] =val
+      else
+        hash[:stepvalue] = @tipo.persist(val)
+      end
+      @tabla_intermedia.insert(hash)
+    end
+  end
+
+  def recover_join(id)
+    entries = @tabla_intermedia.entries.select {|hash| hash[:id] == id}
+    entries.map do |hash|
+      if RestriccionFactory.is_primitivo(@tipo)
+        hash[:value]
+      else
+        @tipo.find_by_id value
+      end
+    end
+  end
+
 end

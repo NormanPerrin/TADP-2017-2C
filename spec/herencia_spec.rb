@@ -9,6 +9,7 @@ describe 'Al usar ORM' do
     has_one String, named: :nombre
   end
 
+  # <-- general -->
   it "deberia poder incluir un modulo persistible" do
     class Estudiante
       include Persona
@@ -17,14 +18,6 @@ describe 'Al usar ORM' do
     e = Estudiante.new
 
     expect(e.respond_to? :nombre).to be true
-  end
-
-  it "deberia ser persistible una clase al incluir un modulo persistible" do
-    class Tomate
-      include Persona
-    end
-
-    expect(Tomate.respond_to? :campos_persistibles).to be true
   end
 
   # <-- clase persistible por inclusion o herencia -->
@@ -136,7 +129,34 @@ describe 'Al usar ORM' do
     expect((MM.descendants.include? CC) && (MM.descendants.include? AA)).to eq true
   end
 
-  it
+  # <-- metodos que se relacionan con herencia -->
+  it "deberia responder con una lista de 1 elemento find_by_id llamado desde un padre con 1 instancia en hijos" do
+    module LL ; has_one String, named: :nombre ; end
+    class OO ; include LL ; has_one String, named: :apellido ; end
+    class QQ < OO ; end
+
+    q = QQ.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    idQ= q.save!
+
+    resultados= LL.find_by_id idQ
+    expect(resultados.length == 1).to eq true
+  end
+
+  it "deberia responder con una lista del elemento instanciado desde hijo en find_by_id llamado desde un padre" do
+    module LL ; has_one String, named: :nombre ; end
+    class OO ; include LL ; has_one String, named: :apellido ; end
+    class QQ < OO ; end
+
+    q = QQ.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    idQ= q.save!
+
+    resultados= LL.find_by_id idQ
+    expect(resultados[0].id == idQ).to eq true
+  end
 
   after :each do
     #borramos la base de datos

@@ -27,6 +27,7 @@ describe 'Al usar ORM' do
     expect(Tomate.respond_to? :campos_persistibles).to be true
   end
 
+  # <-- clase persistible por inclusion o herencia -->
   it "deberia poder heredar una clase persistible" do
     class AyudanteDeCatedra < Estudiante
     end
@@ -34,6 +35,15 @@ describe 'Al usar ORM' do
     expect(AyudanteDeCatedra.respond_to? :find_by_id).to be true
   end
 
+  it "deberia ser persistible una clase que incluye un mixin persistible" do
+    class Pera
+      include Persona
+    end
+
+    expect(Pera.respond_to? :find_by_id).to be true
+  end
+
+  # <-- no modifica clases de la que hereda -->
   it "deberia quedar intacta la clase de la que hereda" do
     class AyudanteDeCatedra < Estudiante
       has_one String, named: :tipo
@@ -51,14 +61,7 @@ describe 'Al usar ORM' do
     expect(e.respond_to? :tipo).to be false
   end
 
-  it "deberia ser persistible una clase que incluye un mixin persistible" do
-    class Pera
-      include Persona
-    end
-
-    expect(Pera.respond_to? :find_by_id).to be true
-  end
-
+  # <-- campos_persistibles por herencia e inclusion -->
   it "deberia guardar todos los campos heredados" do
     class SoyClase
       has_one String, named: :nombre
@@ -71,7 +74,7 @@ describe 'Al usar ORM' do
     subc.nombre = 'norman'
     id = subc.save!
 
-    unObjecto = SoySubClase.find_by_id id
+    unObjecto = (SoySubClase.find_by_id id).first
     expect(unObjecto.nombre == 'norman').to be true
   end
 
@@ -88,7 +91,7 @@ describe 'Al usar ORM' do
     subm.nombre = 'norman'
     id = subm.save!
 
-    rBase = F.find_by_id id
+    rBase = (F.find_by_id id).first
     expect(rBase.nombre == 'norman').to be true
   end
 
@@ -112,9 +115,28 @@ describe 'Al usar ORM' do
     w.apellido = 'perrin'
     id = w.save!
 
-    wBase = W.find_by_id id
+    wBase = (W.find_by_id id).first
     expect((wBase.nombre == 'norman') && (wBase.apellido == 'perrin') && (wBase.edad == 23)).to be true
   end
+
+  # <-- descendants -->
+  it "deberia responder correctamente a los descendants un modulo incluido por una clase y esta a la vez heredada por otra" do
+    module MM
+      has_one String, named: :nombre
+    end
+
+    class CC
+      include MM
+      has_one String, named: :apellido
+    end
+
+    class AA < CC
+    end
+
+    expect((MM.descendants.include? CC) && (MM.descendants.include? AA)).to eq true
+  end
+
+  it
 
   after :each do
     #borramos la base de datos

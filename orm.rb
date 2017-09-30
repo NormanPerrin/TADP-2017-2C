@@ -55,7 +55,14 @@ module ORM
 
     module MetodosClase
 
+      def descendants ; @descendants ||= [] ; end
+
       def inherited subclass
+        descendants.push subclass
+        unless (self.ancestors[1].to_s == "ORM::Persistente")
+          self.ancestors[1].descendants.push subclass
+        end
+
         subclass.send :include, Persistente
 
         unless defined?(subclass.campos_persistibles).nil?
@@ -66,6 +73,11 @@ module ORM
       end
 
       def included subclass
+        descendants.push subclass
+        unless (self.ancestors[1].to_s == "ORM::Persistente")
+          self.ancestors[1].descendants.push subclass
+        end
+
         subclass.send :include, Persistente
 
         unless defined?(subclass.campos_persistibles).nil?
@@ -76,7 +88,7 @@ module ORM
       end
 
       def extended subclass
-        puts 'Los atributos persistibles del modulo no se van a guardar, se debe hacer con include'
+        raise RuntimeError "No se puede hacer extended de un modulo persistible"
       end
 
       attr_writer :campos_persistibles, :tabla_persistencia
@@ -96,11 +108,15 @@ module ORM
         # puts "atributo #{campo} de tipo #{tipo_dato}."
       end
 
+      # TODO: arreglar que trae duplicados
       def all_instances
-        entries = tabla_persistencia.entries
-        #  aca buscaria los entries de las sublcases;
-        #  entries.addAll(subclases.entries)  <= recursivo, no?
-        entries.map{|hash| hash_to_instance(hash, self.new)}
+        subInstancias = self.descendants.map { |subclase| subclase.all_instances.flatten }
+        if self.class.to_s == 'Module'
+          subInstancias.flatten
+        else
+          entries = tabla_persistencia.entries
+          entries.map{|hash| hash_to_instance(hash, self.new)}.concat(subInstancias).flatten
+        end
       end
 
       def method_missing(sym, *args, &block)
@@ -114,11 +130,16 @@ module ORM
         encontrados.map{|hash| hash_to_instance(hash, self.new)}
       end
 
+      # TODO: arreglar que trae duplicados
       def find_by_id(id)
-        # Caso especial de find_by_<what>
-        dummy=self.new
-        dummy.id = id
-        self.refresh(dummy)
+        if self.class.to_s == 'Module'
+          self.descendants.map { |subclase| (subclase.find_by_id id).flatten }.flatten
+        else
+          dummy=self.new
+          dummy.id = id
+          clase = self.refresh(dummy)
+          self.descendants.map { |subclase| (subclase.find_by_id id).flatten }.push(clase).flatten
+        end
       end
 
       def persist(objeto)
@@ -182,15 +203,6 @@ module ORM
       self.has_one(tipo_dato, metadatos)
     end
 
-=begin
-    def has_many(tipo_dato, metadatos)
-      self.send :include, Persistencia
-      self.class_variable_set(:@@campos_persistibles, Hash.new) unless self.class_variable_defined? :@@campos_persistibles
-      puts "clase #{self} inicializada para persistencia"
-
-      self.has_many(tipo_dato, metadatos)
-    end
-=end
   end
 
 end

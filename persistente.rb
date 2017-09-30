@@ -49,13 +49,13 @@ module Persistente
     end
 
     def all_instances
-      if self.descendants.length > 0
+      unless self.descendants.empty?
         subInstancias = self.descendants[0].all_instances if self.descendants.length > 0
       else
         subInstancias = []
       end
 
-      if self.class.to_s == 'Module'
+      if self.class == Module
         subInstancias.flatten
       else
         entries = tabla_persistencia.entries
@@ -178,7 +178,9 @@ module Persistente
         valor = instance.send(nombre.to_sym)
         [nombre, restriccion_tipo(restricciones).transform_to_hash(valor)]
       end]
-      hash.reject {|key, val| val.nil?}
+      hash.reject! {|key, val| val.nil?}
+      hash[:id] = instance.id unless instance.id.nil?
+      hash
     end
 
     def hash_to_instance(hash, instance)

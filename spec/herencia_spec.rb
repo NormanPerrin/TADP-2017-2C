@@ -159,48 +159,47 @@ describe 'Al usar ORM' do
   end
 
   # <-- no se puede testear sin un update -->
-  # it "deberia responder con una lista de 2 elementos instanciado desde hijo en find_by_id llamado desde un padre" do
-  #   module LLL ; has_one String, named: :nombre ; end
-  #   class OOO ; include LLL ; has_one String, named: :apellido ; end
-  #   class QQQ < OOO ; end
+  it "deberia responder con una lista de 2 elementos instanciado desde hijo en find_by_id llamado desde un padre" do
+    module LLLL ; has_one String, named: :nombre ; end
+    class OOOO ; include LLLL ; has_one String, named: :apellido ; end
+    class QQQQ < OOOO ; end
 
-  #   q = QQQ.new
-  #   q.nombre='norman'
-  #   q.apellido='perrin'
-  #   q.id = '123'
-  #   q.save!
+    q = QQQQ.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.id = '123'
+    q.save!
 
-  #   o = OOO.new
-  #   o.nombre='alberto'
-  #   o.apellido='rodriguez'
-  #   o.id = '123'
-  #   o.save!
+    o = OOOO.new
+    o.nombre='alberto'
+    o.apellido='rodriguez'
+    o.id = '123'
+    o.save!
 
-  #   resultados= LLL.find_by_id 123
-  #   expect(resultados.length == 2).to eq true
-  # end
+    resultados= LLLL.find_by_id '123'
+    expect(resultados.length).to eq (2)
+  end
 
-  # it "deberia responder con una lista de los 2 elementos instanciados desde hijo en find_by_id llamado desde un padre" do
-  #   module LLL ; has_one String, named: :nombre ; end
-  #   class OOO ; include LLL ; has_one String, named: :apellido ; end
-  #   class QQQ < OOO ; end
+  it "deberia responder con una lista de los 2 elementos instanciados desde hijo en find_by_id llamado desde un padre" do
+    module LLL ; has_one String, named: :nombre ; end
+    class OOO ; include LLL ; has_one String, named: :apellido ; end
+    class QQQ < OOO ; end
 
-  #   q = QQQ.new
-  #   q.nombre='norman'
-  #   q.apellido='perrin'
-  #   q.id = '123'
-  #   q.save!
+    q = QQQ.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.id = '123'
+    q.save!
 
-  #   o = OOO.new
-  #   o.nombre='alberto'
-  #   o.apellido='rodriguez'
-  #   o.id = '123'
-  #   o.save!
+    o = OOO.new
+    o.nombre='alberto'
+    o.apellido='rodriguez'
+    o.id = '123'
+    o.save!
 
-  #   resultados= LLL.find_by_id '123'
-  #   p resultados
-  #   expect((resultados[0].nombre == 'norman') && (resultados[1].nombre == 'alberto')).to eq true
-  # end
+    resultados= LLL.find_by_id '123'
+    expect((resultados[0].nombre == 'norman') && (resultados[1].nombre == 'alberto')).to eq true
+  end
 
   # <-- all_instances -->
   it "deberia responder con una lista de 1 elemento con all_instances llamado desde un padre" do

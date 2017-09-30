@@ -52,6 +52,12 @@ class RestriccionPrimitivo < RestriccionTipo
 end
 
 class RestriccionPersistible < RestriccionTipo
+
+  def try value,name
+    super(value,name)
+    value.validate!
+  end
+
   def transform_to_hash(value)
     @tipo.persist(value)
   end
@@ -69,7 +75,16 @@ class RestriccionMany < RestriccionTipo
   end
 
   def try values, name
-    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}" unless values.is_a? Array and values.all? {|elem| elem.is_a? @tipo}
+    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista." unless
+        values.is_a? Array
+    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}." unless
+        values.all? {|elem| elem.is_a? @tipo}
+    
+    values.each do |value|
+      if RestriccionFactory.is_composicion_simple value.class
+        value.validate!
+      end
+    end
   end
 
   def transform_to_hash(values)

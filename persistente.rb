@@ -1,5 +1,4 @@
 module Persistente
-  require_relative 'restricciones'
 
   def self.included clase
     clase.extend MetodosClase
@@ -17,11 +16,7 @@ module Persistente
 
       subclass.send :include, Persistente
 
-      unless defined?(subclass.campos_persistibles).nil?
-        subclass.campos_persistibles = subclass.campos_persistibles.merge(self.campos_persistibles.clone)
-      else
-        subclass.campos_persistibles = self.campos_persistibles.clone
-      end
+      subclass.campos_persistibles.merge!(self.campos_persistibles.clone)
     end
 
     def included subclass
@@ -31,8 +26,6 @@ module Persistente
     def extended subclass
       raise "No se puede hacer extended de un modulo persistible"
     end
-
-    attr_writer :campos_persistibles, :tabla_persistencia
 
     def campos_persistibles
       @campos_persistibles ||= Hash.new
@@ -46,6 +39,7 @@ module Persistente
       raise ArgumentError.new "La clase #{tipo_dato} no es persistible" unless RestriccionFactory.is_persistible(tipo_dato)
       campo = metadatos[:named]
       self.campos_persistibles[campo] = [(RestriccionFactory.crear tipo_dato, campo)]
+      self.campos_persistibles[campo].concat(RestriccionContenidoFactory.crear metadatos)
       attr_accessor campo
       # puts "atributo #{campo} de tipo #{tipo_dato}."
     end
@@ -156,7 +150,7 @@ module Persistente
     def is_valid(instance)
       self.campos_persistibles.all? do |nombre, restricciones|
         valor = instance.send nombre.to_sym
-        restricciones.all? {|restriccion| restriccion.passes?(valor)}
+        restricciones.each {|restriccion| restriccion.try(valor, nombre)}
       end
     end
 

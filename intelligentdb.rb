@@ -19,7 +19,12 @@ class IntelligentDB
   end
 
   def update(hash)
-    #TODO: que hacemos con un update?
+    #Viendo los fuentes de TADB::Table
+    #  Si el id esta definido, lo guarda con ese ID.
+    #  Si el id no esta definido, genera un random
+
+    #Con Delete e Insert alcanza
+    @table.delete(hash[:id])
     @table.insert(hash)
   end
 

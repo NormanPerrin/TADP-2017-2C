@@ -96,11 +96,8 @@ module Persistente
 
     def is_valid(instance)
       self.campos_persistibles.all? do |nombre, restricciones|
-        valores = instance.send nombre.to_sym
-        valores = [valores] unless valores.is_a? Array
-        valores.each do |valor|
-          restricciones.each {|restriccion| restriccion.try(valor, nombre)}
-        end
+        valor = instance.send nombre.to_sym
+        restricciones.each {|restriccion| restriccion.try(valor, nombre)}
       end
     end
 

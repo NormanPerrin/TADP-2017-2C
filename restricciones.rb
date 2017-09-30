@@ -33,7 +33,7 @@ class RestriccionTipo
     @tipo = tipo_dato
   end
 
-  def try value,name
+  def try value, name
     raise RuntimeError.new "El valor #{value} de #{name} no es un #{@tipo}" unless value.is_a? @tipo
   end
 
@@ -68,10 +68,8 @@ class RestriccionMany < RestriccionTipo
     @tabla_intermedia = TADB::DB.table("#{tipo_dato}_#{nombre_campo}")
   end
 
-  def try values,name
-    byebug
-    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}" unless
-    values.is_a? Array and values.all? {|elem| elem.is_a? @tipo}
+  def try values, name
+    raise RuntimeError.new "El contenido de #{name} (#{values}) no es una lista de #{@tipo}" unless values.is_a? Array and values.all? {|elem| elem.is_a? @tipo}
   end
 
   def transform_to_hash(values)
@@ -113,10 +111,10 @@ end
 class RestriccionContenidoFactory
 
   def self.crear hash
-    hash.map {|k,v| crear_restriccion(k,v)}.select {|v| !v.nil?}
+    hash.map {|k, v| crear_restriccion(k, v)}.select {|v| !v.nil?}
   end
 
-  def self.crear_restriccion(key,value)
+  def self.crear_restriccion(key, value)
     return RestriccionNoBlank.new if key==:no_blank and value
     return RestriccionFrom.new value if key==:from
     return RestriccionTo.new value if key==:to
@@ -128,8 +126,7 @@ end
 
 class RestriccionNoBlank
   def try value, name
-    raise RuntimeError.new "El valor de #{name} no debe estar vacio" unless
-    !(value == "" or value.nil?)
+    raise RuntimeError.new "El valor de #{name} no debe estar vacio" unless !(value == "" or value.nil?)
   end
 end
 
@@ -138,9 +135,8 @@ class RestriccionFrom
     @from=from
   end
 
-  def try value,name
-    raise RuntimeError.new "#{value} es menor a #{from} para el atributo #{name}" unless
-    value >= @from
+  def try value, name
+    raise RuntimeError.new "#{value} es menor a #{@from} para el atributo #{name}" unless value >= @from
   end
 end
 
@@ -149,9 +145,8 @@ class RestriccionTo
     @to=to
   end
 
-  def try value,name
-    raise RuntimeError.new "#{value} es menor a #{from} para el atributo #{name}" unless
-    value <= @to
+  def try value, name
+    raise RuntimeError.new "#{value} es menor a #{@to} para el atributo #{name}" unless value <= @to
   end
 end
 
@@ -160,8 +155,12 @@ class RestriccionValidate
     @bloque = proc
   end
 
-  def try value,name
-    raise RuntimeError.new "#{value} no cumple con el procedimiento definido para el atributo #{name}" unless
-    value.instance_eval &@bloque
+  def try value, name
+    validable = value
+    validable = [value] unless value.is_a? Array
+    validable.each do |val|
+      raise RuntimeError.new "#{val} no cumple con el procedimiento definido para el atributo #{name}" unless
+          val.instance_eval &@bloque
+    end
   end
 end

@@ -34,4 +34,23 @@ describe 'Al usar ORM' do
     v.full_name=""
     expect{v.validate!}.to raise_error(RuntimeError)
   end
+
+  it "deberia validar from" do
+    v=Validaciones.new
+    v.age = 15
+    expect{v.validate!}.to raise_error(RuntimeError)
+  end
+
+  it "deberia validar to" do
+    v=Validaciones.new
+    v.age = 105
+    expect{v.validate!}.to raise_error(RuntimeError)
+  end
+
+  it "deberia validar procedimiento" do
+    v=Validaciones.new
+    v.grades.push(Nota.new 1)
+    expect{v.validate!}.to raise_error(RuntimeError)
+  end
+
 end

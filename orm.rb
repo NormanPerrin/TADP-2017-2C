@@ -126,8 +126,15 @@ module ORM
         field = "#{sym.to_s[("find_by_".length)..-1]}".to_sym #string magicpulation
         value = args[0]
 
-        encontrados = tabla_persistencia.search_by(field, value)
-        encontrados.map{|hash| hash_to_instance(hash, self.new)}
+        if self.class.to_s == 'Module'
+          subInstanciasEncontradas = self.descendants.map { |subclase| subclase.send("find_by_#{field} (value)").flatten }.flatten
+        else 
+          misEncontrados = tabla_persistencia.search_by(field, value)
+          misIntancias = misEncontrados.map{|hash| hash_to_instance(hash, self.new)}
+          subInstanciasEncontradas = self.descendants.map { |subclase| subclase.send("find_by_#{field} (value)").flatten }.flatten
+          subInstanciasEncontradas.concat(misIntancias)
+        end
+
       end
 
       # TODO: arreglar que trae duplicados

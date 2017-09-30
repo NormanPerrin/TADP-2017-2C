@@ -269,6 +269,74 @@ describe 'Al usar ORM' do
     expect((resultados[0].nombre == 'pedro') && (resultados[1].nombre == 'norman')).to eq true
   end
 
+  # <-- find_by_what -->
+  it "deberia responder con una lista de 1 elemento con find_by_what llamado desde un padre" do
+    module TTA ; has_one String, named: :nombre ; end
+    class OAO ; include TTA ; has_one String, named: :apellido ; end
+    class DF < OAO ; end
+
+    q = DF.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    resultados= TTA.find_by_nombre 'norman'
+    expect(resultados.length == 1).to eq true
+  end
+
+  it "deberia responder con una lista del elemento con find_by_what llamado desde un padre" do
+    module KJK ; has_one String, named: :nombre ; end
+    class MNM ; include KJK ; has_one String, named: :apellido ; end
+    class VNV < MNM ; end
+
+    q = VNV.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    id= q.save!
+
+    resultados= KJK.find_by_nombre 'norman'
+    expect(resultados[0].id == id).to eq true
+  end
+
+  it "deberia responder con una lista de 2 elementos con find_by_what llamado desde un padre" do
+    module KIS ; has_one String, named: :nombre ; end
+    class LQW ; include KIS ; has_one String, named: :apellido ; end
+    class RWE < LQW ; end
+
+    q = RWE.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    o = LQW.new
+    o.nombre='norman'
+    o.apellido='cabezempanada'
+    o.save!
+
+    resultados= KIS.find_by_nombre 'norman'
+    expect(resultados.length == 2).to eq true
+  end
+
+  it "deberia responder con una lista de los 2 elementos con find_by_what llamado desde un padre" do
+    module JSU ; has_one String, named: :nombre ; end
+    class YWY ; include JSU ; has_one String, named: :apellido ; end
+    class IWI < YWY ; end
+
+    q = IWI.new
+    q.nombre='norman'
+    q.apellido='perrin'
+    q.save!
+
+    o = YWY.new
+    o.nombre='norman'
+    o.apellido='cabezempanada'
+    o.save!
+
+    resultados= JSU.find_by_nombre 'norman'
+    p resultados
+    expect((resultados[0].apellido == 'perrin') && (resultados[1].apellido == 'cabezempanada')).to eq true
+  end
+
   after :each do
     #borramos la base de datos
     FileUtils.rm_f Dir.glob("#{Dir.pwd}/db/*")

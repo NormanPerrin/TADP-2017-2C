@@ -1,9 +1,3 @@
 .idea/**
 db/
 .byebug_history
-/target/
-/.cache-main
-/.cache-tests
-.settings
-/.project
-/.classpath

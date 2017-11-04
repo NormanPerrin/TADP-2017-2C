@@ -1,0 +1,29 @@
+# SCALA
+target
+*.class
+
+# ECLIPSE
+build
+.classpath
+.project
+.settings
+org.scala-ide.sdt.core/META-INF/MANIFEST.MF
+org.scala-ide.sdt.update-site/site.xml
+
+# INTELLIJ
+*.iml
+*.ipr
+*.iws
+.idea
+out
+
+# SBT
+dist/*
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+.history
+.cache
+.lib/
+/bin/

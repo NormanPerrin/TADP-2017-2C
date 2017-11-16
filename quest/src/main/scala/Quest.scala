@@ -5,12 +5,12 @@ import scala.util.{Try, Success, Failure}
 object Quest {
 
   case class Heroe(
-    inventario: Inventario,
     trabajo: Trabajo,
-    hp_base: Int,
-    fuerza_base: Int,
-    velocidad_base: Int,
-    inteligencia_base: Int
+    inventario: Inventario = Inventario(),
+    hp_base: Int = 100,
+    fuerza_base: Int = 10,
+    velocidad_base: Int = 10,
+    inteligencia_base: Int = 10
 	) {
     // getters
     def hp(): Int = hp_base + trabajo.hp + inventario.hp
@@ -35,35 +35,39 @@ object Quest {
   case object Ladron extends Trabajo((h: Heroe) => h.velocidad, -5, 0, 10, 0)
 
   case class Inventario(
-    talismanes: List[Item],
-    manoIzq: Item,
-    manoDer: Item,
-    cabeza: Item,
-    torso: Item
+    talismanes: List[Item] = List(),
+    manoIzq: Item = Item("manoIzq"),
+    manoDer: Item = Item("manoDer"),
+    cabeza: Item = Item("cabeza"),
+    torso: Item = Item("torso")
 	) {
     def equipar(item: Item): Inventario = {
       item.parte match {
         // TODO: falta logica asignacion        
         case "talisman" => this.copy(talismanes = item :: talismanes)
-        case "manoIzq" => this.copy(manoIzq = item)
+        case "manoIzq" => {
+          // deberia evaluarse heroe y devolver una monada con el nuevo inventario o el mismo inventario + [mensaje de porque no pudo]
+          // item.condiciones.forall(c => c(???))
+          this.copy(manoIzq = item)
+        }
         case "manoDer" => this.copy(manoDer = item)
         case "cabeza" => this.copy(cabeza = item)
         case "torso" => this.copy(torso = item)
         case "dosManos" => this.copy(manoIzq = item, manoDer = item)
       }
     }
-    
+    // TODO: agregar funcion para mapear segun atributo
     def hp(): Int = talismanes.map(_.hp).sum + manoIzq.hp // TODO sigue
   }
 
   case class Item(
-    condiciones: List[Heroe => Boolean],
-    // TODO: los tipos de partes podrian ser WKO    
     parte: String,
-		hp: Int,
-		fuerza: Int,
-		velocidad: Int,
-		inteligencia: Int
+    condiciones: List[Heroe => Boolean] = List(),
+    // TODO: los tipos de partes podrian ser WKO 
+		hp: Int = 0,
+		fuerza: Int = 0,
+		velocidad: Int = 0,
+		inteligencia: Int = 0
 	) {}
   
   case class Equipo(
@@ -73,7 +77,9 @@ object Quest {
   ) {
     def agregarHeroe(heroe: Heroe): Equipo = copy(heroes = heroe :: heroes )
 //    def realizarMision(Mision): Try(Equipo) = 
-//    def mejorHeroeSegun(f: Heroe => Int): Optional(Heroe) = heroes.
+//    def mejorHeroeSegun(criterio: Heroe => Int): Optional(Heroe) = heroes.sort(criterio).head
+//    def lider(): Optional(Heroe)
+//    def agregarRecompensa(Recomensa): Equipo = 
   }
   
   case class Mision(
@@ -95,7 +101,7 @@ object Quest {
     facilidad: Heroe => Int
   ) {
 //    private def facilidad(): Int
-//    def hacer(equipo: Equipo): Try[Equipo] = 
+//    def hacer(equipo: Equipo): Try[Equipo]
   }
 
 }

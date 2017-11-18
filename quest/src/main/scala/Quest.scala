@@ -1,49 +1,55 @@
 package ar.edu.tadp.quest
 
 import scala.util.{Try, Success, Failure}
+ 
+// heroe
+// trabajo
+// items
+// operaciones y validaciones
 
 object Quest {
 
   case class Heroe(
     trabajo: Trabajo,
     inventario: Inventario = Inventario(),
-    hp_base: Int = 100,
-    fuerza_base: Int = 10,
-    velocidad_base: Int = 10,
-    inteligencia_base: Int = 10
+    stats: Stats = Stats()
 	) {
     // getters
-    def hp(): Int = hp_base + trabajo.hp + inventario.hp
-    def fuerza(): Int = fuerza_base + trabajo.fuerza
-    def velocidad(): Int = velocidad_base + trabajo.velocidad
-    def inteligencia(): Int = inteligencia_base + trabajo.inteligencia
+    def hp(): Int = stats.hp + trabajo.stats.hp + inventario.hp
+    def fuerza(): Int = stats.fuerza + trabajo.stats.fuerza
+    def velocidad(): Int = stats.velocidad + trabajo.stats.velocidad
+    def inteligencia(): Int = stats.inteligencia + trabajo.stats.inteligencia
     
     def statPpal(): String = trabajo.statPpal.nombre
     
     def equipar(item: Item): Heroe = copy(inventario = inventario.equipar(item, this))
   }
   
-  abstract class Stat(
+  abstract class StatPpal(
     val nombre: String,
     val aplicar: (Heroe => Int)
   )
   
-  case object Fuerza extends Stat("fuerza", (h: Heroe) => h.fuerza)
-  case object Inteligencia extends Stat("inteligencia", (h: Heroe) => h.inteligencia)
-  case object Velocidad extends Stat("velocidad", (h: Heroe) => h.velocidad)
-  case object Vida extends Stat("vida", (h: Heroe) => h.hp)
-  
-  abstract class Trabajo(
-    val statPpal: Stat,
-    val hp: Int,
-    val fuerza: Int,
-    val velocidad: Int,
-    val inteligencia: Int
+  case class Stats(
+    val hp: Int = 100,
+    val fuerza: Int = 10,
+    val velocidad: Int = 10,
+    val inteligencia: Int = 10
   )
   
-  case object Guerrero extends Trabajo(Fuerza, 10, 15, 0, -10)
-  case object Mago extends Trabajo(Inteligencia, 0, -20, 0, 20)
-  case object Ladron extends Trabajo(Velocidad, -5, 0, 10, 0)
+  case object Fuerza extends StatPpal("fuerza", (h: Heroe) => h.fuerza)
+  case object Inteligencia extends StatPpal("inteligencia", (h: Heroe) => h.inteligencia)
+  case object Velocidad extends StatPpal("velocidad", (h: Heroe) => h.velocidad)
+  case object Vida extends StatPpal("vida", (h: Heroe) => h.hp)
+  
+  abstract class Trabajo(
+    val statPpal: StatPpal,
+    val stats: Stats
+  )
+  
+  case object Guerrero extends Trabajo(Fuerza, Stats(10, 15, -10, 0))
+  case object Mago extends Trabajo(Inteligencia, Stats(0, -20, 0, 20))
+  case object Ladron extends Trabajo(Velocidad, Stats(-5, 0, 10, 0))
 
   case class Inventario(
     talismanes: List[Item] = List(),
@@ -66,18 +72,18 @@ object Quest {
         case "dosManos" => this.copy(manoIzq = item, manoDer = item)
       }
     }
-    // TODO: agregar funcion para mapear segun atributo
-    def hp(): Int = talismanes.map(_.hp).sum + manoIzq.hp // TODO sigue
+    def obtenerItems: List[Item] = List(manoIzq, manoDer, cabeza, torso) ++ talismanes
+    def hp(): Int = obtenerItems.map(_.stats.hp).sum
+    def fuerza(): Int = obtenerItems.map(_.stats.fuerza).sum
+    def velocidad(): Int = obtenerItems.map(_.stats.velocidad).sum
+    def inteligencia(): Int = obtenerItems.map(_.stats.inteligencia).sum
   }
 
   case class Item(
     parte: String,
-    condiciones: List[Heroe => Boolean] = List(),
+    stats: Stats = Stats(0, 0, 0, 0),
+    condiciones: List[Heroe => Boolean] = List()
     // TODO: los tipos de partes podrian ser WKO 
-		hp: Int = 0,
-		fuerza: Int = 0,
-		velocidad: Int = 0,
-		inteligencia: Int = 0
 	) {}
   
   case class Equipo(

@@ -14,19 +14,19 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un heroe" should "poderse equipar items" in {
-    val guante = Item("manoIzq", hp=3)
+    val guante = Item("manoIzq", Stats(3))
     guerreroBase.equipar(guante).hp should be (113) // hp default (100) + hp guerrero (10) + hp item (3)
   }
 
   "Un heroe" should "quedar sin poder equiparse item si no cumple una condicion" in {
-    val guantePotente = Item("manoIzq", hp=10, condiciones=List(
+    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
       (heroe: Heroe) => { heroe.fuerza() > 100 }    
     ))
     guerreroBase.equipar(guantePotente).hp should be (110) // hp default (100) + hp guerrero (10)
   }
   
   "Un heroe" should "quedar sin poder equiparse item si cumple las condiciones" in {
-    val guantePotente = Item("manoIzq", hp=10, condiciones=List(
+    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
       (heroe: Heroe) => { heroe.statPpal == "fuerza" },
       (heroe: Heroe) => { heroe.fuerza() > 20 }
     ))
@@ -34,9 +34,9 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
     "Un heroe" should "quedar sin poder equiparse item si no cumple alguna condicion" in {
-    val guantePotente = Item("manoIzq", hp=10, condiciones=List(
+    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
       (heroe: Heroe) => { heroe.statPpal == "fuerza" },
-      (heroe: Heroe) => { heroe.fuerza() > 100 }
+      (heroe: Heroe) => { heroe.fuerza > 100 }
     ))
     guerreroBase.equipar(guantePotente).hp should be (110) // hp default (100) + hp guerrero (10)
   }

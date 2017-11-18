@@ -1,11 +1,7 @@
 package ar.edu.tadp.quest
 
 import scala.util.{Try, Success, Failure}
- 
-// heroe
-// trabajo
-// items
-// operaciones y validaciones
+import scala.Option
 
 object Quest {
 
@@ -19,9 +15,17 @@ object Quest {
     def fuerza(): Int = stats.fuerza + trabajo.stats.fuerza
     def velocidad(): Int = stats.velocidad + trabajo.stats.velocidad
     def inteligencia(): Int = stats.inteligencia + trabajo.stats.inteligencia
+
+    // setters TODO: ver cómo se hace...
+    def hp(_hp: Int): Heroe = copy(stats = Stats(_hp, stats.fuerza, stats.velocidad, stats.inteligencia))
+    def fuerza(_fuerza: Int): Heroe = copy(stats = Stats(stats.hp, _fuerza, stats.velocidad, stats.inteligencia))
+    def velocidad(_velocidad: Int): Heroe = copy(stats = Stats(stats.hp, stats.fuerza, _velocidad, stats.inteligencia))
+    def inteligencia(_inteligencia: Int): Heroe = copy(stats = Stats(stats.hp, stats.fuerza, stats.velocidad, _inteligencia))
+    def trabajo(_trabajo: Trabajo) = copy(trabajo = _trabajo)
     
-    def statPpal(): String = trabajo.statPpal.nombre
-    
+    def statPpal(): StatPpal = trabajo.statPpal
+    def valorStatPpal(): Int = trabajo.statPpal.aplicar(this)
+
     def equipar(item: Item): Heroe = copy(inventario = inventario.equipar(item, this))
   }
   
@@ -60,16 +64,28 @@ object Quest {
 	) {
     def equipar(item: Item, heroe: Heroe): Inventario = {
       item.parte match {
-        // TODO: falta logica asignacion        
+        // TODO: falta logica asignacion
         case "talisman" => this.copy(talismanes = item :: talismanes)
         case "manoIzq" => {
           if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoIzq = item)
           return this
         }
-        case "manoDer" => this.copy(manoDer = item)
-        case "cabeza" => this.copy(cabeza = item)
-        case "torso" => this.copy(torso = item)
-        case "dosManos" => this.copy(manoIzq = item, manoDer = item)
+        case "manoDer" => {
+          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoDer = item)
+          return this
+        }
+        case "cabeza" => {
+          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(cabeza = item)
+          return this
+        }
+        case "torso" => {
+          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(torso = item)
+          return this
+        }
+        case "dosManos" => {
+          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoIzq = item, manoDer = item)
+          return this
+        }
       }
     }
     def obtenerItems: List[Item] = List(manoIzq, manoDer, cabeza, torso) ++ talismanes
@@ -82,18 +98,32 @@ object Quest {
   case class Item(
     parte: String,
     stats: Stats = Stats(0, 0, 0, 0),
-    condiciones: List[Heroe => Boolean] = List()
-    // TODO: los tipos de partes podrian ser WKO 
+    condiciones: List[Heroe => Boolean] = List(),
+    precio: Int = 0
 	) {}
   
   case class Equipo(
-    heroes: List[Heroe],
     nombre: String,
-    pozo: Int
+    heroes: List[Heroe] = List(),
+    pozo: Int = 0,
   ) {
     def agregarHeroe(heroe: Heroe): Equipo = copy(heroes = heroe :: heroes )
+    def mejorHeroeSegun(criterio: Heroe => Int): Option[Heroe] = {
+      val heroesOrdenados = heroes.sortWith((h1, h2) => criterio(h1) < criterio(h2))
+      if (heroesOrdenados.length > 0) return Some(heroesOrdenados.head)
+      return None
+    }
+    def obtenerItem(item: Item): Equipo = {
+      def incrementoStatPpal(heroe: Heroe, item: Item): Int = heroe.equipar(item).valorStatPpal - heroe.valorStatPpal
+      val heroesOrdenados = heroes
+        .sortWith((h1, h2) => incrementoStatPpal(h1, item) > incrementoStatPpal(h2, item))
+      
+      if (heroesOrdenados.length > 0 && incrementoStatPpal(heroesOrdenados.head, item) > 0 )
+        return copy(heroes = heroesOrdenados.head.equipar(item) :: heroesOrdenados.slice(1, heroesOrdenados.length))
+      return copy(pozo = pozo + item.precio)
+    }
+    
 //    def realizarMision(Mision): Try(Equipo) = 
-//    def mejorHeroeSegun(criterio: Heroe => Int): Optional(Heroe) = heroes.sort(criterio).head
 //    def lider(): Optional(Heroe)
 //    def agregarRecompensa(Recomensa): Equipo = 
   }

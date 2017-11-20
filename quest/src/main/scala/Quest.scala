@@ -12,9 +12,9 @@ object Quest {
 	) {
     // getters
     def hp(): Int = stats.hp + trabajo.stats.hp + inventario.hp
-    def fuerza(): Int = stats.fuerza + trabajo.stats.fuerza
-    def velocidad(): Int = stats.velocidad + trabajo.stats.velocidad
-    def inteligencia(): Int = stats.inteligencia + trabajo.stats.inteligencia
+    def fuerza(): Int = stats.fuerza + trabajo.stats.fuerza + inventario.fuerza
+    def velocidad(): Int = stats.velocidad + trabajo.stats.velocidad + inventario.velocidad
+    def inteligencia(): Int = stats.inteligencia + trabajo.stats.inteligencia + inventario.inteligencia
 
     // setters TODO: ver cómo se hace...
     def hp(_hp: Int): Heroe = copy(stats = Stats(_hp, stats.fuerza, stats.velocidad, stats.inteligencia))
@@ -27,6 +27,7 @@ object Quest {
     def valorStatPpal(): Int = trabajo.statPpal.aplicar(this)
 
     def equipar(item: Item): Heroe = copy(inventario = inventario.equipar(item, this))
+    
   }
   
   abstract class StatPpal(
@@ -109,45 +110,67 @@ object Quest {
   ) {
     def agregarHeroe(heroe: Heroe): Equipo = copy(heroes = heroe :: heroes )
     def mejorHeroeSegun(criterio: Heroe => Int): Option[Heroe] = {
-      val heroesOrdenados = heroes.sortWith((h1, h2) => criterio(h1) < criterio(h2))
-      if (heroesOrdenados.length > 0) return Some(heroesOrdenados.head)
-      return None
+      val heroesOrdenados = heroes.sortWith((h1, h2) => criterio(h1) > criterio(h2))
+      heroesOrdenados match {
+        case h1 :: h2 :: _ => {
+          if (criterio(h1) == criterio(h2)) return None
+          return Some(h1)
+        }
+        case h1 :: _ => Some(h1)
+        case _ => None
+      }
     }
     def obtenerItem(item: Item): Equipo = {
       def incrementoStatPpal(heroe: Heroe, item: Item): Int = heroe.equipar(item).valorStatPpal - heroe.valorStatPpal
-      val heroesOrdenados = heroes
-        .sortWith((h1, h2) => incrementoStatPpal(h1, item) > incrementoStatPpal(h2, item))
       
-      if (heroesOrdenados.length > 0 && incrementoStatPpal(heroesOrdenados.head, item) > 0 )
-        return copy(heroes = heroesOrdenados.head.equipar(item) :: heroesOrdenados.slice(1, heroesOrdenados.length))
-      return copy(pozo = pozo + item.precio)
+      // TODO: reusar mejor heroe segun
+    		  val heroesOrdenados = heroes 
+        .sortWith((h1, h2) => incrementoStatPpal(h1, item) > incrementoStatPpal(h2, item))
+        
+      if (heroesOrdenados.length > 0 && incrementoStatPpal(heroesOrdenados.head, item) > 0 ) {
+        val nuevoHeroe = heroesOrdenados.head.equipar(item)
+        return this.copy(heroes = nuevoHeroe :: heroesOrdenados.slice(1, heroesOrdenados.length))
+      }
+        
+      return this.copy(pozo = pozo + item.precio)
     }
-    
+    def reemplazarMiembro(heroeAReemplazar: Heroe, heroeNuevo: Heroe) =
+      copy(heroes = heroes.map { case `heroeAReemplazar` => heroeNuevo ; case heroe => heroe })
+    def lider(): Option[Heroe] =  mejorHeroeSegun(_.valorStatPpal)
 //    def realizarMision(Mision): Try(Equipo) = 
-//    def lider(): Optional(Heroe)
+//    def realizarTarea(tarea:Tarea) : Racha[Equipo] = ???
 //    def agregarRecompensa(Recomensa): Equipo = 
   }
   
-  case class Mision(
-    tareas: List[Tarea],
-    nombre: String,
-    recompensa: Equipo => Equipo
-  ) {
+  trait Racha
+  
+//  case class Mision(
+//    tareas: List[Tarea],
+//    nombre: String,
+//    recompensa: Equipo => Equipo
+//  ) {
 //    def serRealizadaPor(equipo: Equipo): Try[Equipo] = {
-//      var equipoBaqueta = tareas.fold(Success(equipo): Try[Equipo])(tareaNueva) {tareaNueva.hacer)}
+//      var equipoBaqueta = tareas.fold(Success(equipo): Try[Equipo]){(equipo,tareaNueva) => {
+//        equipo match {
+//          case Success(equipo) => equipo.realizarTarea(tareaNueva)
+//          case x => x
+//        }
+//      }}
+//      
 //      equipoBaqueta match {
 //        case Success(equipo) => recompensa(equipo)
 //        case Failure(err) => equipo
 //      }
-  }
+//  }
   
   case class Tarea(
     nombre: String,
     efecto: Heroe => Heroe,
-    facilidad: Heroe => Int
+    facilidad: (Equipo,Heroe) => Option[Int]
   ) {
-//    private def facilidad(): Int
-//    def hacer(equipo: Equipo): Try[Equipo]
+    def hacer(heroe: Heroe): Heroe = efecto(heroe) 
   }
+  
+  
 
 }

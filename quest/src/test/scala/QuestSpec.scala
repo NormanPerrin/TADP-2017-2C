@@ -23,6 +23,8 @@ class QuestSpec extends FlatSpec with Matchers {
   ))
   def guanteLiviano = Item(ManoIzq, Stats(hp=10))
   def lanza = Item(DosManos, Stats(fuerza=10))
+  def tarea = Tarea("sacar la basura", (heroe: Heroe) => heroe, (equipo: Equipo, heroe: Heroe) => Some(1))
+  def mision = Mision("Robar cosas", List(RobarTalisman), (equipo: Equipo) => {equipo.obtenerRecompensa(1000)})
   
   // HEROES TESTS  
   "Un heroe" should "tener vida" in {
@@ -46,6 +48,10 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un heroe" should "quedar sin poder equiparse item si no cumple alguna condicion" in {
+    guerreroBase.equipar(guantePotente).hp should be (110) // hp heroe (100) + hp guerrero (10)
+  }
+  
+  "Un heroe" should "poder equiparse " in {
     guerreroBase.equipar(guantePotente).hp should be (110) // hp heroe (100) + hp guerrero (10)
   }
   
@@ -186,7 +192,28 @@ class QuestSpec extends FlatSpec with Matchers {
     equipoVacio.lider should be (None)
   }
   
-//  "Un heroe" should "poder realizar una tarea" in {
-//    magoBase.realizar(Tarea())
-//  }
+  //  MISIONES TESTS Y TAREAS
+  "Un heroe" should "tiene facilidad para realizar una tarea" in {
+    tarea.facilidad(equipoCompleto, guerreroBase) should be (Some(1))
+  }
+  
+  "Un heroe" should "no deberia tener facilidad para hacer una tarea si no cumple la condicion de facilidad" in {
+    RobarTalisman.facilidad(equipoCompleto, guerreroBase) should be (None) // La condicion para robar talisman es que el lider sea ladron y es mago en este
+  }
+  
+  "Un heroe" should "deberia tener facilidad para hacer una tarea porque cumple condicion" in {
+    RobarTalisman.facilidad(equipoVacio.agregarHeroe(ladronBase), ladronBase) should be (Some(20)) // la facilidad deberia ser igual a la velocidad del guerreroBase
+  }
+  
+  "Un heroe" should "quedar afectado por una tarea" in {
+    val talismanRobado = Item(Cuello)
+    RobarTalisman.hacer(ladronBase).inventario.talismanes should contain (talismanRobado)
+  }
+  
+  "Un equipo" should "poder realizar una mision" in {
+    equipoVacio.agregarHeroe(ladronBase)
+      .hacer()
+  }
+  
+  
 }

@@ -127,6 +127,10 @@ object Quest {
     def inteligencia(): Int = obtenerItems.map(_.stats.inteligencia).sum
   }
   
+  trait Recompensa
+  case class RecompensaItem(item: Item) extends Recompensa
+  case class RecompensaOro(oro: Int) extends Recompensa
+  
   case class Equipo(
     nombre: String,
     heroes: List[Heroe] = List(),
@@ -142,6 +146,12 @@ object Quest {
         }
         case h1 :: _ => Some(h1)
         case _ => None
+      }
+    }
+    def obtenerRecompensa(recompensa: Recompensa)  {
+      recompensa match {
+        case RecompensaOro(oro) => copy(pozo= pozo + oro)
+        case RecompensaItem(item) => obtenerItem(item)
       }
     }
     def obtenerItem(item: Item): Equipo = {
@@ -166,32 +176,47 @@ object Quest {
 //    def agregarRecompensa(Recomensa): Equipo = 
   }
   
-//  case class Mision(
-//    tareas: List[Tarea],
-//    nombre: String,
-//    recompensa: Equipo => Equipo
-//  ) {
-//    def serRealizadaPor(equipo: Equipo): Try[Equipo] = {
-//      var equipoBaqueta = tareas.fold(Success(equipo): Try[Equipo]){(equipo,tareaNueva) => {
-//        equipo match {
-//          case Success(equipo) => equipo.realizarTarea(tareaNueva)
-//          case x => x
-//        }
-//      }}
-//      
-//      equipoBaqueta match {
-//        case Success(equipo) => recompensa(equipo)
-//        case Failure(err) => equipo
-//      }
-//  }
+  case class Mision(
+    nombre: String,
+    tareas: List[Tarea],
+    recompensa: Equipo => Equipo
+  ) {
+    def serRealizadaPor(equipo: Equipo): Try[Equipo] = {
+      var equipoBaqueta = tareas.fold(Success(equipo): Try[Equipo]){(equipo,tareaNueva) => {
+        equipo match {
+          case Success(equipo) => equipo.realizarTarea(tareaNueva)
+          case x => x
+        }
+      }}
+      
+      equipoBaqueta match {
+        case Success(equipo) => recompensa(equipo)
+        case Failure(err) => equipo
+      }
+    }
+  }
+    
+ 
   
   case class Tarea(
     nombre: String,
-    efecto: Heroe => Heroe,
-    facilidad: (Equipo,Heroe) => Option[Int]
-  ) {
-    def hacer(heroe: Heroe): Heroe = efecto(heroe) 
-  }
+    hacer: Heroe => Heroe,
+    facilidad: (Equipo, Heroe) => Option[Int]
+  )
+  
+  object RobarTalisman extends Tarea(
+    "robar talisman",
+    (heroe: Heroe) => {
+      val talismanRobado = Item(Cuello)
+      heroe.equipar(talismanRobado)
+    },
+    (equipo: Equipo, heroe: Heroe) => {
+      equipo.lider match {
+        case Some(Heroe(Ladron, _, _)) => Some(heroe.velocidad)
+        case _ => None
+      }
+    }
+  )
   
   
 

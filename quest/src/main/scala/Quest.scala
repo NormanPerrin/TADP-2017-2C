@@ -63,8 +63,7 @@ object Quest {
   case object Guerrero extends Trabajo(Fuerza, Stats(10, 15, -10, 0))
   case object Mago extends Trabajo(Inteligencia, Stats(0, -20, 0, 20))
   case object Ladron extends Trabajo(Velocidad, Stats(-5, 0, 10, 0))
-  
-//  TODO: agregar obtener stat con 2 manos
+
   case class Manos(
     manoDer: Option[Item] = None,
     manoIzq: Option[Item] = None,
@@ -148,7 +147,7 @@ object Quest {
         case _ => None
       }
     }
-    def obtenerRecompensa(recompensa: Recompensa)  {
+    def obtenerRecompensa(recompensa: Recompensa): Equipo = {
       recompensa match {
         case RecompensaOro(oro) => copy(pozo= pozo + oro)
         case RecompensaItem(item) => obtenerItem(item)
@@ -172,26 +171,42 @@ object Quest {
       copy(heroes = heroes.map { case `heroeAReemplazar` => heroeNuevo ; case heroe => heroe })
     def lider(): Option[Heroe] =  mejorHeroeSegun(_.valorStatPpal)
 //    def realizarMision(Mision): Try(Equipo) = 
-//    def realizarTarea(tarea:Tarea) : Racha[Equipo] = ???
+    def realizarTarea(tarea:Tarea) : Racha ={
+      val heroesOrdenados = heroes
+        .filter(tarea.facilidad(this, _).isDefined)
+        .sortWith(tarea.facilidad(this,_).get >  tarea.facilidad(this,_).get)
+        
+      heroesOrdenados match {
+        case List() => RachaPerdedora(this, tarea)
+        case _ => {
+          val heroeMasFacil = heroesOrdenados.head
+          RachaGanadora(reemplazarMiembro(heroeMasFacil, tarea.hacer(heroeMasFacil)))
+        }
+      }
+    }
 //    def agregarRecompensa(Recomensa): Equipo = 
   }
   
+  trait Racha
+  case class RachaGanadora(equipo: Equipo) extends Racha
+  case class RachaPerdedora(equipo: Equipo, tarea: Tarea) extends Racha
+
   case class Mision(
     nombre: String,
     tareas: List[Tarea],
-    recompensa: Equipo => Equipo
+    recompensa: Recompensa
   ) {
-    def serRealizadaPor(equipo: Equipo): Try[Equipo] = {
-      var equipoBaqueta = tareas.fold(Success(equipo): Try[Equipo]){(equipo,tareaNueva) => {
-        equipo match {
-          case Success(equipo) => equipo.realizarTarea(tareaNueva)
-          case x => x
+    def serRealizadaPor(equipo: Equipo): Racha = {
+      var equipoBaqueta = tareas.foldLeft(RachaGanadora(equipo): Racha) { (racha, tareaNueva) => {
+        racha match {
+          case RachaGanadora(equipo) => equipo.realizarTarea(tareaNueva)
+          case fallido => fallido
         }
       }}
       
       equipoBaqueta match {
-        case Success(equipo) => recompensa(equipo)
-        case Failure(err) => equipo
+        case RachaGanadora(equipo) => RachaGanadora(equipo.obtenerRecompensa(recompensa))
+        case RachaPerdedora(_, tarea) => RachaPerdedora(equipo, tarea)
       }
     }
   }

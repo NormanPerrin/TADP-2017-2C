@@ -131,7 +131,4 @@ class HeroesSpec extends FlatSpec with Matchers {
     equipoVacio.lider should be (None)
   }
   
-  
-  
-  
 }

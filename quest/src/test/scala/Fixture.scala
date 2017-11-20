@@ -25,4 +25,8 @@ object fixture {
   def guanteLiviano = Item(ManoIzq, Stats(hp = 10))
   
   def lanza = Item(DosManos, Stats(fuerza = 10))
+  
+  def tarea = Tarea("sacar la basura", (heroe: Heroe) => heroe, (equipo: Equipo, heroe: Heroe) => Some(1))
+  
+  def mision = Mision("Robar cosas", List(RobarTalisman), RecompensaOro(1000))
 }

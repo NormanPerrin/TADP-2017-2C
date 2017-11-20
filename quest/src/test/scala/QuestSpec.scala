@@ -17,10 +17,11 @@ class QuestSpec extends FlatSpec with Matchers {
   .agregarHeroe(guerreroBase)
   .agregarHeroe(ladronBase)
   def guante = Item(ManoIzq, Stats(3))
-  def guantePotente = Item(ManoIzq, Stats(10), condiciones=List(
+  def guantePotente = Item(ManoIzq, Stats(hp=10), condiciones=List(
     (heroe: Heroe) => { heroe.statPpal == Fuerza },
     (heroe: Heroe) => { heroe.fuerza > 100 }
   ))
+  def guanteLiviano = Item(ManoIzq, Stats(hp=10))
   def lanza = Item(DosManos, Stats(fuerza=10))
   
   // HEROES TESTS  
@@ -41,24 +42,32 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un heroe" should "quedar sin poder equiparse item si cumple las condiciones" in {
-    val guantePotente = Item(ManoIzq, Stats(hp=10), condiciones=List(
-      (heroe: Heroe) => { heroe.statPpal == Fuerza },
-      (heroe: Heroe) => { heroe.fuerza() > 20 }
-    ))
-    guerreroBase.equipar(guantePotente).hp should be (120) // hp heroe (100) + hp guerrero (10) + hp item (10)
+    guerreroBase.equipar(guanteLiviano).hp should be (120) // hp heroe (100) + hp guerrero (10) + hp item (10)
   }
   
   "Un heroe" should "quedar sin poder equiparse item si no cumple alguna condicion" in {
-    val guantePotente = Item(ManoIzq, Stats(10), condiciones=List(
-      (heroe: Heroe) => { heroe.statPpal == Fuerza },
-      (heroe: Heroe) => { heroe.fuerza > 100 }
-    ))
     guerreroBase.equipar(guantePotente).hp should be (110) // hp heroe (100) + hp guerrero (10)
   }
   
   // dos manos 
   "Un heroe" should "devolver atributo correctamente al equipar un item de dos manos" in {
     guerreroBase.equipar(lanza).fuerza should be (35) // fuerza heroe (10) + fuerza guerrero (15) + fuerza item (10)
+  }
+  
+  "Un heroe" should "devolver atributo correctamente al equipar un item de 1 mano y luego ser reemplazado por uno de dos manos" in {
+    val equipado = guerreroBase
+      .equipar(guante)
+      .equipar(lanza)
+      
+     equipado.inventario.obtenerItems should be (List(lanza))
+  }
+  
+  "Un heroe" should "devolver atributo correctamente al equipar un item de dos manos y luego ser reemplazado por uno de 1 mano" in {
+    val equipado = guerreroBase
+      .equipar(lanza)
+      .equipar(guante)
+      
+     equipado.inventario.obtenerItems should be (List(guante))
   }
   
   "Un heroe" should "poder cambiar de trabajo" in {

@@ -5,6 +5,15 @@ import scala.Option
 
 object Quest {
 
+  case class Item(
+    parte: ParteCuerpo,
+    stats: Stats = Stats(0, 0, 0, 0),
+    condiciones: List[Heroe => Boolean] = List(),
+    precio: Int = 0
+	) {
+    def puedeEquipar(heroe: Heroe): Boolean = condiciones.forall(cond => cond(heroe))
+  }
+  
   case class Heroe(
     trabajo: Trabajo,
     inventario: Inventario = Inventario(),
@@ -16,7 +25,6 @@ object Quest {
     def velocidad(): Int = stats.velocidad + trabajo.stats.velocidad + inventario.velocidad
     def inteligencia(): Int = stats.inteligencia + trabajo.stats.inteligencia + inventario.inteligencia
 
-    // setters TODO: ver cómo se hace...
     def hp(_hp: Int): Heroe = copy(stats = Stats(_hp, stats.fuerza, stats.velocidad, stats.inteligencia))
     def fuerza(_fuerza: Int): Heroe = copy(stats = Stats(stats.hp, _fuerza, stats.velocidad, stats.inteligencia))
     def velocidad(_velocidad: Int): Heroe = copy(stats = Stats(stats.hp, stats.fuerza, _velocidad, stats.inteligencia))
@@ -55,53 +63,69 @@ object Quest {
   case object Guerrero extends Trabajo(Fuerza, Stats(10, 15, -10, 0))
   case object Mago extends Trabajo(Inteligencia, Stats(0, -20, 0, 20))
   case object Ladron extends Trabajo(Velocidad, Stats(-5, 0, 10, 0))
-
-  case class Inventario(
-    talismanes: List[Item] = List(),
-    manoIzq: Item = Item("manoIzq"),
-    manoDer: Item = Item("manoDer"),
-    cabeza: Item = Item("cabeza"),
-    torso: Item = Item("torso")
-	) {
-    def equipar(item: Item, heroe: Heroe): Inventario = {
+  
+//  TODO: agregar obtener stat con 2 manos
+  case class Manos(
+    manoDer: Option[Item] = None,
+    manoIzq: Option[Item] = None,
+    estoyADosManos: Boolean = false
+  ) {
+    def obtenerItems(): List[Option[Item]] = {
+      if (estoyADosManos) return List(manoDer) 
+      return List(manoDer, manoIzq)
+    }
+    def agarrar(item: Item): Manos = {
       item.parte match {
-        // TODO: falta logica asignacion
-        case "talisman" => this.copy(talismanes = item :: talismanes)
-        case "manoIzq" => {
-          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoIzq = item)
-          return this
+        case ManoDer => {
+          if (estoyADosManos) return copy(Some(item), None, false)
+          return copy(manoDer=Some(item))
         }
-        case "manoDer" => {
-          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoDer = item)
-          return this
+        case ManoIzq => {
+          if (estoyADosManos) return copy(None, Some(item), false)
+          return copy(manoIzq=Some(item))
         }
-        case "cabeza" => {
-          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(cabeza = item)
-          return this
-        }
-        case "torso" => {
-          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(torso = item)
-          return this
-        }
-        case "dosManos" => {
-          if (item.condiciones.forall(cond => cond(heroe))) return this.copy(manoIzq = item, manoDer = item)
-          return this
-        }
+        case DosManos => copy(Some(item), Some(item), true)
       }
     }
-    def obtenerItems: List[Item] = List(manoIzq, manoDer, cabeza, torso) ++ talismanes
+  }
+  
+  trait ParteCuerpo
+  case object Cabeza extends ParteCuerpo
+  case object Torso extends ParteCuerpo
+  case object Piernas extends ParteCuerpo
+  case object Cuello extends ParteCuerpo
+  case object ManoDer extends ParteCuerpo
+  case object ManoIzq extends ParteCuerpo
+  case object DosManos extends ParteCuerpo
+  
+  case class Inventario(
+    talismanes: List[Item] = List(),
+    manos: Manos = Manos(),
+    cabeza: Option[Item] = None,
+    torso: Option[Item] = None,
+    piernas: Option[Item] = None
+	) {
+    def equipar(item: Item, heroe: Heroe): Inventario = {
+      
+      if (!item.puedeEquipar(heroe)) return this
+      
+      item.parte match {
+        case Cuello => this.copy(talismanes = item :: talismanes)
+        case ManoIzq | ManoDer | DosManos => this.copy(manos=manos.agarrar(item))
+        case Cabeza => this.copy(cabeza=Some(item))
+        case Torso => this.copy(torso = Some(item))
+        case Piernas => this.copy(piernas = Some(item))
+      }
+    }
+    def obtenerItems: List[Item] = {
+      val items = List(cabeza, torso) ++ manos.obtenerItems()
+      items.filter(_.isDefined).map(_.get) ++ talismanes
+    }
     def hp(): Int = obtenerItems.map(_.stats.hp).sum
     def fuerza(): Int = obtenerItems.map(_.stats.fuerza).sum
     def velocidad(): Int = obtenerItems.map(_.stats.velocidad).sum
     def inteligencia(): Int = obtenerItems.map(_.stats.inteligencia).sum
   }
-
-  case class Item(
-    parte: String,
-    stats: Stats = Stats(0, 0, 0, 0),
-    condiciones: List[Heroe => Boolean] = List(),
-    precio: Int = 0
-	) {}
   
   case class Equipo(
     nombre: String,
@@ -141,8 +165,6 @@ object Quest {
 //    def realizarTarea(tarea:Tarea) : Racha[Equipo] = ???
 //    def agregarRecompensa(Recomensa): Equipo = 
   }
-  
-  trait Racha
   
 //  case class Mision(
 //    tareas: List[Tarea],

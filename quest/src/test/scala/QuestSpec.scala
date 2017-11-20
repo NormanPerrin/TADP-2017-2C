@@ -16,6 +16,12 @@ class QuestSpec extends FlatSpec with Matchers {
   .agregarHeroe(magoBase)
   .agregarHeroe(guerreroBase)
   .agregarHeroe(ladronBase)
+  def guante = Item(ManoIzq, Stats(3))
+  def guantePotente = Item(ManoIzq, Stats(10), condiciones=List(
+    (heroe: Heroe) => { heroe.statPpal == Fuerza },
+    (heroe: Heroe) => { heroe.fuerza > 100 }
+  ))
+  def lanza = Item(DosManos, Stats(fuerza=10))
   
   // HEROES TESTS  
   "Un heroe" should "tener vida" in {
@@ -23,31 +29,36 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un heroe" should "poderse equipar items" in {
-    val guante = Item("manoIzq", Stats(3))
+    val guante = Item(ManoIzq, Stats(3))
     guerreroBase.equipar(guante).hp should be (113) // hp heroe (100) + hp guerrero (10) + hp item (3)
   }
 
   "Un heroe" should "quedar sin poder equiparse item si no cumple una condicion" in {
-    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
+    val guantePotente = Item(ManoIzq, Stats(10), condiciones=List(
       (heroe: Heroe) => { heroe.fuerza() > 100 }    
     ))
     guerreroBase.equipar(guantePotente).hp should be (110) // hp heroe (100) + hp guerrero (10)
   }
   
   "Un heroe" should "quedar sin poder equiparse item si cumple las condiciones" in {
-    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
+    val guantePotente = Item(ManoIzq, Stats(hp=10), condiciones=List(
       (heroe: Heroe) => { heroe.statPpal == Fuerza },
       (heroe: Heroe) => { heroe.fuerza() > 20 }
     ))
-    guerreroBase.equipar(guantePotente).hp should be (120) // hp heroe (100) + hp guerrero (10)
+    guerreroBase.equipar(guantePotente).hp should be (120) // hp heroe (100) + hp guerrero (10) + hp item (10)
   }
   
   "Un heroe" should "quedar sin poder equiparse item si no cumple alguna condicion" in {
-    val guantePotente = Item("manoIzq", Stats(10), condiciones=List(
+    val guantePotente = Item(ManoIzq, Stats(10), condiciones=List(
       (heroe: Heroe) => { heroe.statPpal == Fuerza },
       (heroe: Heroe) => { heroe.fuerza > 100 }
     ))
     guerreroBase.equipar(guantePotente).hp should be (110) // hp heroe (100) + hp guerrero (10)
+  }
+  
+  // dos manos 
+  "Un heroe" should "devolver atributo correctamente al equipar un item de dos manos" in {
+    guerreroBase.equipar(lanza).fuerza should be (35) // fuerza heroe (10) + fuerza guerrero (15) + fuerza item (10)
   }
   
   "Un heroe" should "poder cambiar de trabajo" in {
@@ -83,7 +94,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo" should "otorgar item al heroe con mayor aumento de stat principal al obtener item" in {
-    val item = Item("cabeza", Stats(fuerza=20), List(), 1000)
+    val item = Item(Cabeza, Stats(fuerza=20), List(), 1000)
     val equipo = equipoVacio
       .agregarHeroe(guerreroBase)
       .agregarHeroe(magoBase)
@@ -95,7 +106,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo" should "vender item si ningun heroe tiene aumento de stat principal al obtener item" in {
-    val item = Item("cabeza", Stats(0, 0, 0, 0), List(), 1000)   
+    val item = Item(Cabeza, Stats(0, 0, 0, 0), List(), 1000)   
     val equipo = equipoVacio
       .agregarHeroe(guerreroBase)
       .agregarHeroe(magoBase)
@@ -104,7 +115,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo" should "vender item si ningun heroe se puede equipar el item" in {
-    val item = Item("cabeza", Stats(inteligencia=1000), List((heroe: Heroe) => heroe.inteligencia > 1000), 1000)
+    val item = Item(Cabeza, Stats(inteligencia=1000), List((heroe: Heroe) => heroe.inteligencia > 1000), 1000)
     val equipo = equipoVacio
       .agregarHeroe(guerreroBase)
       .agregarHeroe(magoBase)
@@ -113,7 +124,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo" should "otorgar item al heroe con mayor aumento de stat principal al obtener item y pasa condicion" in {
-    val item = Item("cabeza", Stats(fuerza=20), List((heroe: Heroe) => heroe.fuerza > 10), 1000)
+    val item = Item(Cabeza, Stats(fuerza=20), List((heroe: Heroe) => heroe.fuerza > 10), 1000)
     val equipo = equipoVacio
       .agregarHeroe(guerreroBase)
       .agregarHeroe(magoBase)
@@ -125,7 +136,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo vacio" should "vender item al obtener item" in {
-    val item = Item("cabeza", Stats(), List(), 1000)   
+    val item = Item(Cabeza, Stats(), List(), 1000)   
     equipoVacio.obtenerItem(item).pozo should be (1000)
   }
   
@@ -153,7 +164,7 @@ class QuestSpec extends FlatSpec with Matchers {
   }
   
   "Un equipo" should "no tener un lider si hay empate entre miembros" in {
-    val item = Item("cabeza", stats=Stats(0, fuerza=5, 0, 0))
+    val item = Item(Cabeza, stats=Stats(0, fuerza=5, 0, 0))
     val equipoInicial = equipoVacio
       .agregarHeroe(guerreroBase.equipar(item))
       .agregarHeroe(ladronBase)

@@ -11,7 +11,8 @@ class MisionesSpec extends FlatSpec with Matchers {
   val equipoVacio = fixture.equipoVacio
   val guerreroBase = fixture.guerreroBase
   val ladronBase = fixture.ladronBase
-  val mision = fixture.mision
+  val misionOro = fixture.misionOro
+  val misionItem = fixture.misionItem
 
   "Un heroe" should "tiene facilidad para realizar una tarea" in {
     tarea.facilidad(equipoCompleto, guerreroBase) should be(Some(1))
@@ -30,12 +31,38 @@ class MisionesSpec extends FlatSpec with Matchers {
     RobarTalisman.hacer(ladronBase).inventario.talismanes should contain(talismanRobado)
   }
 
-  "Un equipo" should "poder realizar una mision" in {
+  "Un equipo" should "poder realizar una mision y obtener oro" in {
     val equipoMision = equipoVacio
       .agregarHeroe(ladronBase)
-      .realizarMision(mision)
+      .realizarMision(misionOro)
 
     equipoMision.equipoRacha().pozo should be(1000)
     equipoMision.equipoRacha().heroes should contain(ladronBase.equipar(Item(Cuello)))
   }
+  
+  "Un equipo" should "poder realizar una mision y obtener un item" in {
+    val equipoMision = equipoVacio
+      .agregarHeroe(ladronBase)
+      .realizarMision(misionItem)
+    
+    val ladronDsps = ladronBase.equipar(Item(Cuello)).equipar(Item(Piernas, Stats(10, 10, 10, 10), precio = 100))
+    equipoMision.equipoRacha().heroes should contain(ladronDsps)
+  }
+  
+  "Un equipo" should "no poder realizar una mision" in {
+    val equipoAntes = equipoVacio
+      .agregarHeroe(guerreroBase)
+    val equipoDsps = equipoAntes.realizarMision(misionOro).equipoRacha()
+
+    equipoAntes should be (equipoDsps)
+  }
+  
+//  "Un equipo" should "otorgar item al lider, no al que hizo la tarea" in {
+//    val equipoAntes = equipoVacio
+//      .agregarHeroe(guerreroBase)
+//      .
+//    val equipoDsps = equipoAntes.realizarMision(misionOro).equipoRacha()
+//
+//    equipoAntes should be (equipoDsps)
+//  }
 }

@@ -64,7 +64,7 @@ case class Manos(
       }
     }
     def obtenerItems: List[Item] = {
-      val items = List(cabeza, torso) ++ manos.obtenerItems()
+      val items = List(cabeza, torso, piernas) ++ manos.obtenerItems()
       items.filter(_.isDefined).map(_.get) ++ talismanes
     }
     def hp(): Int = obtenerItems.map(_.stats.hp).sum

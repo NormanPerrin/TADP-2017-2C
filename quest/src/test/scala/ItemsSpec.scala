@@ -19,6 +19,10 @@ class ItemsSpec extends FlatSpec with Matchers {
   "Un heroe" should "quedar sin poder equiparse item si cumple las condiciones" in {
     guerreroBase.equipar(guanteLiviano).hp should be(120) // hp heroe (100) + hp guerrero (10) + hp item (10)
   }
+  
+  "Un heroe" should "poder equipar item de pierna" in {
+    guerreroBase.equipar(Item(Piernas, Stats(10, 10, 10, 10))).hp should be (120) // hp heroe (100) + hp guerrero (10) + hp item (10)
+  }
 
   "Un heroe" should "quedar sin poder equiparse item si no cumple alguna condicion" in {
     guerreroBase.equipar(guantePotente).hp should be(110) // hp heroe (100) + hp guerrero (10)

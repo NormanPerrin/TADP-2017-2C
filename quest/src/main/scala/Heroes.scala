@@ -45,9 +45,10 @@ import ar.edu.tadp.quest._
       }
     }
     def obtenerItem(item: Item): Equipo = {
-      def incrementoStatPpal(heroe: Heroe, item: Item): Int = heroe.equipar(item).valorStatPpal - heroe.valorStatPpal
+      def incrementoStatPpal(heroe: Heroe, item: Item): Int = {
+        heroe.equipar(item).valorStatPpal - heroe.valorStatPpal
+      }
       
-      // TODO: reusar mejor heroe segun
     		  val heroesOrdenados = heroes 
         .sortWith((h1, h2) => incrementoStatPpal(h1, item) > incrementoStatPpal(h2, item))
         
@@ -55,7 +56,7 @@ import ar.edu.tadp.quest._
         val nuevoHeroe = heroesOrdenados.head.equipar(item)
         return this.copy(heroes = nuevoHeroe :: heroesOrdenados.slice(1, heroesOrdenados.length))
       }
-        
+      
       return this.copy(pozo = pozo + item.precio)
     }
     def reemplazarMiembro(heroeAReemplazar: Heroe, heroeNuevo: Heroe) =

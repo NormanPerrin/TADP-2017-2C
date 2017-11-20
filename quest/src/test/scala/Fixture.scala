@@ -28,5 +28,7 @@ object fixture {
   
   def tarea = Tarea("sacar la basura", (heroe: Heroe) => heroe, (equipo: Equipo, heroe: Heroe) => Some(1))
   
-  def mision = Mision("Robar cosas", List(RobarTalisman), RecompensaOro(1000))
+  def misionOro = Mision("Robar cosas", List(RobarTalisman), RecompensaOro(1000))
+  
+  def misionItem = Mision("Robar cosas", List(RobarTalisman), RecompensaItem(Item(Piernas, Stats(10, 10, 10, 10), precio=100)))
 }

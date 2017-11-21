@@ -13,6 +13,10 @@ class MisionesSpec extends FlatSpec with Matchers {
   val ladronBase = fixture.ladronBase
   val misionOro = fixture.misionOro
   val misionItem = fixture.misionItem
+  val misionEspecial = fixture.misionRecompensaEspecial
+  val taberna = fixture.taberna
+  val equipoTriunfador = fixture.equipoTriunfador
+  val mayorOro = fixture.mayorOro
 
   "Un heroe" should "tiene facilidad para realizar una tarea" in {
     tarea.facilidad(equipoCompleto, guerreroBase) should be(Some(1))
@@ -57,12 +61,43 @@ class MisionesSpec extends FlatSpec with Matchers {
     equipoAntes should be (equipoDsps)
   }
   
-//  "Un equipo" should "otorgar item al lider, no al que hizo la tarea" in {
-//    val equipoAntes = equipoVacio
-//      .agregarHeroe(guerreroBase)
-//      .
-//    val equipoDsps = equipoAntes.realizarMision(misionOro).equipoRacha()
-//
-//    equipoAntes should be (equipoDsps)
-//  }
+  "Un equipo" should "otorgar recompensa al ladron y otorgar item tarea al mago" in {
+    val magoVeloz = Heroe(Mago, stats=Stats(velocidad=100, inteligencia=(-10)))
+    
+    val equipoAntes = equipoVacio
+      .agregarHeroe(ladronBase)
+      .agregarHeroe(magoVeloz)
+
+    val equipoDsps = equipoAntes.realizarMision(misionEspecial).equipoRacha()
+    
+    val magoVelozDsps = magoVeloz.equipar(Item(Cuello))
+    val ladronDsps = ladronBase.equipar(Item(Cabeza, Stats(10, 10, 100, 10), precio=100))
+    
+    equipoDsps.heroes should contain allOf (magoVelozDsps, ladronDsps)
+  }
+  
+  "Una taberna" should "elegir mejor mision para un equipo" in {
+    val mejorMision = taberna.elegirMision(equipoTriunfador, mayorOro)
+    
+    mejorMision should be (Some(misionOro))
+  }
+  
+  "Una taberna" should "no elegir ninguna mision si ninguna se puede ganar" in {
+    val mejorMision = taberna.elegirMision(equipoCompleto, mayorOro)
+    
+    mejorMision should be (None)
+  }
+  
+  
+  "Una taberna" should "entrenar un equipo y devolver nuevo equipo con efectos de todas las misiones" in {
+    val equipoDsps = taberna.entrenar(equipoTriunfador, mayorOro)
+    
+    val equipoExpected = equipoTriunfador.realizarMision(misionOro).equipoRacha.realizarMision(misionItem).equipoRacha()
+    
+    equipoDsps should be (equipoExpected) 
+  }
+  
+  "Una taberna" should "entrenar un equipo completo y devolver nuevo equipo sin efectos" in {
+    taberna.entrenar(equipoCompleto, mayorOro) should be (equipoCompleto) 
+  }
 }

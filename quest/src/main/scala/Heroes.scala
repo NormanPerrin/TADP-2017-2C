@@ -77,7 +77,7 @@ import ar.edu.tadp.quest._
     }
     def realizarMision(mision : Mision) : Racha = {
       mision.serRealizadaPor(this)
-    } 
+    }
 }
 
 case class Heroe(

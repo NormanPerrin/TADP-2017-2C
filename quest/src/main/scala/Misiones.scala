@@ -45,3 +45,37 @@ case class Mision(
       }
     }
   )
+  
+  case class Taberna(
+    misiones: List[Mision] = List()
+  ) {
+    type Criterio = (Equipo, Equipo) => Boolean
+    def elegirMision(equipo: Equipo, criterio: Criterio): Option[Mision] = {
+      
+      val misionesGanadas = misiones.filter( (mision) => {
+        equipo.realizarMision(mision) match {
+          case RachaGanadora(_) => true
+          case _ => false
+        }
+      })
+
+      val misionesOrdenadas = misionesGanadas.sortWith((m1, m2) => {
+        val resultado1 = equipo.realizarMision(m1)
+        val resultado2 = equipo.realizarMision(m2)
+        criterio(resultado1.equipoRacha, resultado2.equipoRacha)
+      })
+      
+      if (misionesGanadas.length > 0) return Some(misionesOrdenadas.head)
+      return None
+    }
+    def entrenar(equipo: Equipo, criterio: Criterio): Equipo = {
+      val mejorMision = elegirMision(equipo, criterio)
+      mejorMision match {
+        case None => equipo
+        case Some(misionElegida) => {
+          val nuevoEquipo = equipo.realizarMision(misionElegida)
+          copy(misiones=misiones.diff(List(misionElegida))).entrenar(nuevoEquipo.equipoRacha, criterio)
+        }
+      }
+    }
+  }

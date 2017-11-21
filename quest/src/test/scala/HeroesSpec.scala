@@ -117,6 +117,12 @@ class HeroesSpec extends FlatSpec with Matchers {
     equipoInicial.lider should be (Some(magoBase))
   }
   
+  "Un equipo" should "tener un lider definido de un equipo distinto" in {
+    val equipoInicial = equipoCompleto
+    
+    equipoInicial.lider should be (Some(magoBase))
+  }
+  
   "Un equipo" should "no tener un lider si hay empate entre miembros" in {
     val item = Item(Cabeza, stats=Stats(0, fuerza=5, 0, 0))
     val equipoInicial = equipoVacio

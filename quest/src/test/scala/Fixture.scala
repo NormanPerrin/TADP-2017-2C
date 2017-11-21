@@ -7,6 +7,8 @@ object fixture {
   
   def magoBase = Heroe(Mago)
   
+  def magoTonto = Heroe(Mago, stats=Stats(inteligencia=(-10)))
+  
   def ladronBase = Heroe(Ladron)
   
   def equipoVacio = Equipo("Alto Equipo")
@@ -15,6 +17,8 @@ object fixture {
     .agregarHeroe(magoBase)
     .agregarHeroe(guerreroBase)
     .agregarHeroe(ladronBase)
+  
+  def equipoTriunfador = equipoVacio.agregarHeroe(ladronBase).agregarHeroe(magoTonto)
     
   def guante = Item(ManoIzq, Stats(3))
   
@@ -31,4 +35,10 @@ object fixture {
   def misionOro = Mision("Robar cosas", List(RobarTalisman), RecompensaOro(1000))
   
   def misionItem = Mision("Robar cosas", List(RobarTalisman), RecompensaItem(Item(Piernas, Stats(10, 10, 10, 10), precio=100)))
+  
+  def misionRecompensaEspecial = Mision("Robar especial", List(RobarTalisman), RecompensaItem(Item(Cabeza, Stats(10, 10, 100, 10), precio=100)))
+  
+  def taberna = Taberna(List(misionItem, misionOro))
+  
+  def mayorOro = (e1: Equipo, e2: Equipo) => { e1.pozo > e2.pozo }
 }

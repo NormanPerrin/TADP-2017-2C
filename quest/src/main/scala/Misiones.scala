@@ -1,5 +1,6 @@
 package ar.edu.tadp.quest
 import ar.edu.tadp.quest._
+
   
     trait Recompensa
   case class RecompensaItem(item: Item) extends Recompensa
@@ -50,9 +51,9 @@ case class Mision(
     misiones: List[Mision] = List()
   ) {
     type Criterio = (Equipo, Equipo) => Boolean
-    def elegirMision(equipo: Equipo, criterio: Criterio): Option[Mision] = {
+    def elegirMision(equipo: Equipo, criterio: Criterio, misionesDisponibles:List[Mision]): Option[Mision] = {
       
-      val misionesGanadas = misiones.filter( (mision) => {
+      val misionesGanadas = misionesDisponibles.filter( (mision) => {
         equipo.realizarMision(mision) match {
           case RachaGanadora(_) => true
           case _ => false
@@ -68,14 +69,22 @@ case class Mision(
       if (misionesGanadas.length > 0) return Some(misionesOrdenadas.head)
       return None
     }
-    def entrenar(equipo: Equipo, criterio: Criterio): Equipo = {
-      val mejorMision = elegirMision(equipo, criterio)
-      mejorMision match {
-        case None => equipo
-        case Some(misionElegida) => {
-          val nuevoEquipo = equipo.realizarMision(misionElegida)
-          copy(misiones=misiones.diff(List(misionElegida))).entrenar(nuevoEquipo.equipoRacha, criterio)
-        }
-      }
+    
+    def elegirMision(equipo:Equipo, criterio:Criterio): Option[Mision]={
+      elegirMision(equipo,criterio,misiones)
     }
+
+    def entrenar(equipo: Equipo, criterio: Criterio): Equipo = {
+      var misionesDisponibles = misiones
+      var equipoMisioneando:Racha = RachaGanadora(equipo)
+      
+      while (!misionesDisponibles.isEmpty) {
+        var misionARealizar = elegirMision(equipo,criterio,misionesDisponibles).getOrElse(misionesDisponibles.head)
+        equipoMisioneando = equipoMisioneando.flatMap(_.realizarMision(misionARealizar))
+        misionesDisponibles = misionesDisponibles.diff(List(misionARealizar))
+      }
+      
+      return equipoMisioneando.equipoRacha
+    }
+      
   }

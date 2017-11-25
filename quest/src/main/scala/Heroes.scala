@@ -4,12 +4,15 @@ import ar.edu.tadp.quest._
 
   trait Racha {
      def equipoRacha():Equipo
+     def flatMap(f: (Equipo => Racha)): Racha
   }
   case class RachaGanadora(equipo: Equipo) extends Racha{
     def equipoRacha : Equipo = equipo
+    def flatMap(f: (Equipo => Racha)) = f(equipo)
   }
   case class RachaPerdedora(equipo: Equipo, tarea: Tarea) extends Racha{
     def equipoRacha : Equipo = equipo
+    def flatMap(f: (Equipo => Racha)) = this
   }
   
     abstract class Trabajo(
